@@ -13,8 +13,8 @@ Scorecard: 5–15 medibles semanales, 13 semanas, rojo/verde
 ## Vistas
 | Pestaña | Para qué |
 |---|---|
-| **Mis To-Dos** (inicio) | Escoge tu nombre (se recuerda). Tus To-Dos: Vencidos / Esta semana / Hecho, con la Roca y la Meta a la que sirven. % de To-Dos hechos en la semana (meta EOS: 90%), tus Rocas y tus medibles. |
-| **Rocas** | Rocas del trimestre por dueño, con estado (en camino / fuera / hecha), meta anual y sus To-Dos. |
+| **To-Dos** (inicio) | Una sola lista para todo el equipo: Retrasados / Pendientes / Hecho, con la Roca o Tema al que sirven. % de To-Dos hechos en la semana (meta EOS: 90%), Rocas en camino y medibles en verde. El responsable es opcional. |
+| **Rocas** | Una sola lista con las Rocas del trimestre, con estado (en camino / fuera / hecha), meta anual y sus To-Dos. |
 | **Temas (IDS)** | Lista de temas, Top 3 por prioridad, estado Identificado → Discutiendo → Resuelto. “Solucionar → To-Do” guarda la solución y crea el To-Do. |
 | **Level 10** | La junta semanal con la agenda oficial y relojes: Segue 5′, Scorecard 5′, Rocas 5′, Titulares 5′, To-Dos 5′, IDS 60′, Conclusión 5′ (calificación 1–10). |
 | **V/TO** | La visión en una página y la cascada Meta → Rocas → To-Dos con avance. |
@@ -37,7 +37,7 @@ Scorecard: 5–15 medibles semanales, 13 semanas, rojo/verde
 ## Modelo de datos (`data.json`)
 | Campo | Qué es |
 |---|---|
-| `ejemplo` | `true` muestra el aviso “Datos de ejemplo”. Cambiar a `false` con datos reales. |
+| `ejemplo` | `true` muestra el aviso “Datos de ejemplo”. Hoy: `false`. |
 | `empresa`, `actualizado` | Nombre y fecha de última publicación (AAAA-MM-DD). |
 | `personas[]` | `{id, nombre}`. Los `id` (`roberto`, `socio`) se usan en todo el archivo; para cambiar el nombre del socio sólo se edita `nombre`. |
 | `github` | Repositorio donde publica el botón (no contiene secretos). |
@@ -50,7 +50,7 @@ Scorecard: 5–15 medibles semanales, 13 semanas, rojo/verde
 | `vto.plan1` | `{fecha, ingresos, utilidad, medibles[]}`. |
 | `metas[]` | Metas del plan a 1 año (1–7): `{id, texto, dueno}`. |
 | `rocas[]` | `{id, texto, dueno, metaId, estado: en_camino \| fuera \| hecha, fecha}`. |
-| `todos[]` | `{id, texto, dueno, fecha, hecho, hechoEl, rocaId \| null, temaId \| null, creado}`. |
+| `todos[]` | `{id, texto, dueno \| null, fecha, hecho, hechoEl, rocaId \| null, temaId \| null, creado}`. |
 | `temas[]` | `{id, texto, dueno, prioridad: 1 \| 2 \| 3 \| null, estado: identificado \| discutiendo \| resuelto, solucion, creado}`. |
 | `scorecard[]` | `{id, nombre, dueno, operador: ">=" \| "<=", meta, unidad: "$" \| "%" \| "", valores: {"AAAA-MM-DD (lunes)": número}}`. |
 | `juntas[]` | `{fecha, calificaciones: {persona: 1–10}, titulares[], mensajes[]}`. |

@@ -3,22 +3,115 @@
   "empresa": "FRÜTOS Chávez",
   "actualizado": "2026-10-28",
   "personas": [
-    { "id": "roberto", "nombre": "Roberto" },
-    { "id": "socio", "nombre": "Socio" }
+    {
+      "id": "roberto",
+      "nombre": "Roberto"
+    },
+    {
+      "id": "socio",
+      "nombre": "Socio"
+    }
   ],
-  "github": { "owner": "robchvz97", "repo": "vto-frutos-chavez", "rama": "main", "ruta": "data.json" },
-  "trimestre": { "nombre": "T4 2026", "inicio": "2026-10-01", "fin": "2026-12-31" },
+  "github": {
+    "owner": "robchvz97",
+    "repo": "vto-frutos-chavez",
+    "rama": "main",
+    "ruta": "data.json"
+  },
+  "trimestre": {
+    "nombre": "T4 2026",
+    "inicio": "2026-10-01",
+    "fin": "2026-12-31"
+  },
   "vto": {
     "valores": [],
-    "enfoque": { "proposito": "", "nicho": "" },
-    "meta10": { "fecha": null, "texto": "" },
-    "marketing": { "mercado": "", "unicos": [], "proceso": "", "garantia": "" },
-    "imagen3": { "fecha": null, "ingresos": null, "utilidad": null, "medibles": [], "comoSeVe": [] },
-    "plan1": { "fecha": null, "ingresos": null, "utilidad": null, "medibles": [] }
+    "enfoque": {
+      "proposito": "",
+      "nicho": ""
+    },
+    "meta10": {
+      "fecha": null,
+      "texto": ""
+    },
+    "marketing": {
+      "mercado": "",
+      "unicos": [],
+      "proceso": "",
+      "garantia": ""
+    },
+    "imagen3": {
+      "fecha": null,
+      "ingresos": null,
+      "utilidad": null,
+      "medibles": [],
+      "comoSeVe": []
+    },
+    "plan1": {
+      "fecha": null,
+      "ingresos": null,
+      "utilidad": null,
+      "medibles": []
+    }
   },
   "metas": [],
   "rocas": [],
-  "todos": [],
+  "todos": [
+    {
+      "id": "d1",
+      "texto": "Cancelar pauta mayoreo.",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
+    },
+    {
+      "id": "d2",
+      "texto": "Grabar 1 reel por semana.",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
+    },
+    {
+      "id": "d3",
+      "texto": "Arreglar cel de Vallarta y conectarlo con Grok.",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
+    },
+    {
+      "id": "d4",
+      "texto": "$500 pesos de menudeo al mes (pulpa maracuyá y fresa).",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
+    },
+    {
+      "id": "d5",
+      "texto": "Estudiar la pauta de la competencia: Hiberry y Berryhouse (biblioteca de anuncios de Facebook) + SEO bajo el nombre de la competencia.",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
+    }
+  ],
   "temas": [],
   "scorecard": [],
   "juntas": [],

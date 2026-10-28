@@ -54,22 +54,44 @@ const ESTADOS_TEMA = [["identificado", "Identificado"], ["discutiendo", "Discuti
 const rocasTrim = () => D.rocas;
 
 function semanaActual() { const l = lunesDe(hoyISO()); return [l, sumarDias(l, 6)]; }
-function pctSemana(dueno) {
-  const [l, dom] = semanaActual();
-  const xs = D.todos.filter((t) => (!dueno || t.dueno === dueno) && t.fecha >= l && t.fecha <= dom);
-  const vencidosAbiertos = D.todos.filter((t) => (!dueno || t.dueno === dueno) && !t.hecho && t.fecha < l);
-  const total = xs.length + vencidosAbiertos.length, hechos = xs.filter((t) => t.hecho).length;
-  return { total, hechos, pct: total ? Math.round((hechos / total) * 100) : null };
+function hechoReciente(t) { return t.hecho && t.hechoEl && diasEntre(t.hechoEl, hoyISO()) <= 7; }
+function pctSemana() {
+  // EOS: % de To-Dos hechos sobre los que vencen esta semana o antes (más los hechos recientes de ese grupo)
+  const [, dom] = semanaActual();
+  const xs = D.todos.filter((t) => t.fecha && t.fecha <= dom && (!t.hecho || hechoReciente(t)));
+  if (xs.length) { const hechos = xs.filter((t) => t.hecho).length; return { modo: "semana", total: xs.length, hechos, pct: Math.round((hechos / xs.length) * 100) }; }
+  const ys = D.todos.filter((t) => !t.hecho || hechoReciente(t)), hechos = ys.filter((t) => t.hecho).length;
+  return { modo: "abiertos", total: ys.length, hechos, pct: null };
+}
+function tilePct(s, prefijo = "") {
+  if (s.modo === "semana") return `<div class="dato"><div class="num ${s.pct >= 90 ? "verde" : "rojo"}">${s.pct}%</div><div class="et">${prefijo}${s.hechos}/${s.total} hechos de los que vencen esta semana · meta 90%</div></div>`;
+  return `<div class="dato"><div class="num">${s.total ? s.hechos + "/" + s.total : "—"}</div><div class="et">${prefijo}To-Dos hechos · ninguno vence esta semana</div></div>`;
+}
+function listaRevision() {
+  const hoy = hoyISO(), porFecha = (a, b) => String(a.fecha || "9999").localeCompare(String(b.fecha || "9999"));
+  const retr = D.todos.filter((t) => !t.hecho && t.fecha && t.fecha < hoy).sort(porFecha);
+  const pend = D.todos.filter((t) => !t.hecho && !(t.fecha && t.fecha < hoy)).sort(porFecha);
+  const hechos = D.todos.filter(hechoReciente).sort((a, b) => b.hechoEl.localeCompare(a.hechoEl));
+  return { retr, pend, hechos };
 }
 function semanas13() { const l = lunesDe(hoyISO()); return Array.from({ length: 13 }, (_, i) => sumarDias(l, (i - 12) * 7)); }
 function colorMedible(m, v) { if (v == null || v === "") return ""; const ok = m.operador === "<=" ? Number(v) <= Number(m.meta) : Number(v) >= Number(m.meta); return ok ? "verde" : "rojo"; }
 function progresoRoca(r) { if (r.estado === "hecha") return 100; const t = todosDe("rocaId", r.id); return t.length ? Math.round((t.filter((x) => x.hecho).length / t.length) * 90) : 0; }
 
 /* ===== piezas de UI ===== */
+const RUTA = { r: "rocas", t: "temas", m: "vto", s: "l10" };
+const ir = (tipo, id, texto) => `<a class="ir" href="#/${RUTA[tipo]}/${id}">${esc(texto)}</a>`;
+function opcionesLiga(sel) {
+  const rs = rocasTrim().filter((r) => r.estado !== "hecha" || "r:" + r.id === sel), ts = D.temas.filter((t) => t.estado !== "resuelto" || "t:" + t.id === sel);
+  return `<optgroup label="Rocas">${rs.map((r) => `<option value="r:${r.id}" ${sel === "r:" + r.id ? "selected" : ""}>${esc(r.texto)}</option>`).join("")}</optgroup>
+    <optgroup label="Temas">${ts.map((t) => `<option value="t:${t.id}" ${sel === "t:" + t.id ? "selected" : ""}>${esc(t.texto)}</option>`).join("")}</optgroup>`;
+}
 function ligaTexto(t) {
-  if (t.rocaId && roca(t.rocaId)) { const r = roca(t.rocaId), m = meta(r.metaId); return `<span class="liga">Roca: <b>${esc(r.texto)}</b>${m ? ` · Meta: ${esc(m.texto)}` : ""}</span>`; }
-  if (t.temaId && tema(t.temaId)) return `<span class="liga">Tema: <b>${esc(tema(t.temaId).texto)}</b></span>`;
-  return `<span class="liga">Sin ligar</span>`;
+  let chip = "";
+  if (t.rocaId && roca(t.rocaId)) { const r = roca(t.rocaId), m = meta(r.metaId); chip = ir("r", r.id, "Roca: " + r.texto) + (m ? " · " + ir("m", m.id, "Meta: " + m.texto) : ""); }
+  else if (t.temaId && tema(t.temaId)) chip = ir("t", t.temaId, "Tema: " + tema(t.temaId).texto);
+  const sel = `<select class="liga-sel" data-act="liga-todo" data-id="${t.id}" aria-label="Ligar a Roca o Tema"><option value="__" selected>${chip ? "cambiar" : "ligar a Roca/Tema"}</option><option value="">Sin ligar</option>${opcionesLiga("")}</select>`;
+  return `${chip}${chip ? " " : ""}${sel}`;
 }
 function itemTodo(t, opts = {}) {
   const hoy = hoyISO(), venc = !t.hecho && !!t.fecha && t.fecha < hoy;
@@ -81,12 +103,7 @@ function itemTodo(t, opts = {}) {
     <button class="x" data-act="borrar-todo" data-id="${t.id}" title="Borrar" aria-label="Borrar">✕</button></li>`;
 }
 function selPersonas(name, sel) { return `<select name="${name}" aria-label="Responsable"><option value="">Sin asignar</option>${personas().map((p) => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${esc(p.nombre)}</option>`).join("")}</select>`; }
-function selLiga(sel) {
-  const rs = rocasTrim().filter((r) => r.estado !== "hecha"), ts = D.temas.filter((t) => t.estado !== "resuelto");
-  return `<select name="liga" aria-label="Ligar a"><option value="">Sin ligar</option>
-    <optgroup label="Rocas">${rs.map((r) => `<option value="r:${r.id}" ${sel === "r:" + r.id ? "selected" : ""}>${esc(r.texto)}</option>`).join("")}</optgroup>
-    <optgroup label="Temas">${ts.map((t) => `<option value="t:${t.id}" ${sel === "t:" + t.id ? "selected" : ""}>${esc(t.texto)}</option>`).join("")}</optgroup></select>`;
-}
+function selLiga(sel) { return `<select name="liga" aria-label="Ligar a"><option value="">Sin ligar</option>${opcionesLiga(sel)}</select>`; }
 function formTodo({ dueno, liga = "", placeholder = "Nuevo To-Do (7 días)…" } = {}) {
   return `<form class="agregar" data-form="todo">
     <div class="principal"><input name="texto" required placeholder="${placeholder}" aria-label="Nuevo To-Do"><button class="btn pri">Agregar</button></div>
@@ -98,16 +115,14 @@ const seg = (act, id, opciones, val) => `<div class="seg">${opciones.map(([v, t]
 function vTodos() {
   const hoy = hoyISO(), todos = D.todos;
   const porFecha = (a, b) => String(a.fecha || "9999").localeCompare(String(b.fecha || "9999"));
-  const retr = todos.filter((t) => !t.hecho && t.fecha && t.fecha < hoy).sort(porFecha);
-  const pend = todos.filter((t) => !t.hecho && !(t.fecha && t.fecha < hoy)).sort(porFecha);
-  const hechos = todos.filter((t) => t.hecho && t.hechoEl && diasEntre(t.hechoEl, hoy) <= 7).sort((a, b) => b.hechoEl.localeCompare(a.hechoEl));
+  const { retr, pend, hechos } = listaRevision();
   const rs = rocasTrim(), s = pctSemana();
   const ultima = semanas13()[11], meds = D.scorecard, verdes = meds.filter((m) => colorMedible(m, m.valores[ultima]) === "verde").length;
   const lista = (xs, vacio) => xs.length ? `<ul class="lista">${xs.map((t) => itemTodo(t, { dueno: true })).join("")}</ul>` : `<div class="vacio">${vacio}</div>`;
   return `
   <div class="fila-entre"><h1>To-Dos</h1><span class="tenue chico">Semana del ${fCorta(semanaActual()[0])} al ${fCorta(semanaActual()[1])}</span></div>
   <div class="tira">
-    <div class="dato"><div class="num ${s.pct == null ? "" : s.pct >= 90 ? "verde" : "rojo"}">${s.pct == null ? "—" : s.pct + "%"}</div><div class="et">To-Dos hechos esta semana · meta 90%</div></div>
+    ${tilePct(s)}
     <div class="dato"><div class="num">${rs.length ? rs.filter((r) => r.estado !== "fuera").length + "/" + rs.length : "—"}</div><div class="et">Rocas en camino</div></div>
     <div class="dato"><div class="num ${!meds.length ? "" : verdes < meds.length ? "rojo" : "verde"}">${meds.length ? verdes + "/" + meds.length : "—"}</div><div class="et">Medibles en verde (sem. ${fCorta(ultima)})</div></div>
   </div>
@@ -117,11 +132,21 @@ function vTodos() {
   <div class="grupo"><h2>Hecho (últimos 7 días) <span class="cuenta">${hechos.length}</span></h2>${lista(hechos, "Aún nada hecho esta semana.")}</div>`;
 }
 
+function selMeta(r) {
+  return `<select class="liga-sel" data-act="meta-roca" data-id="${r.id}" aria-label="Meta anual de la Roca"><option value="__" selected>${r.metaId && meta(r.metaId) ? "cambiar" : "ligar a meta"}</option><option value="">Sin meta</option>${D.metas.map((m) => `<option value="${m.id}">${esc(m.texto)}</option>`).join("")}</select>`;
+}
+function temasDeRoca(r) {
+  const ts = D.temas.filter((t) => t.rocaId === r.id && t.estado !== "resuelto");
+  if (ts.length) return `<div class="meta">${ts.map((t) => ir("t", t.id, "Tema: " + t.texto)).join(" · ")}</div>`;
+  return r.estado === "fuera" ? `<div class="meta"><button class="btn mini" data-act="bajar" data-roca="${r.id}" data-texto="${esc("Roca fuera de camino: " + r.texto)}">→ Tema</button></div>` : "";
+}
+function temaDeMedible(m) { return D.temas.find((t) => t.medibleId === m.id && t.estado !== "resuelto"); }
 function tarjetaRoca(r, conDueno) {
   const m = meta(r.metaId), ts = todosDe("rocaId", r.id), abiertos = ts.filter((t) => !t.hecho), hechos = ts.filter((t) => t.hecho);
-  return `<div class="roca">
+  return `<div class="roca" id="it-${r.id}">
     <div class="cab"><div><div class="tit">${esc(r.texto)}</div>
-      <div class="meta">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}Meta anual: ${m ? esc(m.texto) : "<span class='rojo'>sin meta</span>"}${r.fecha ? " · Fecha " + fCorta(r.fecha) : ""}</div></div><button class="x" data-act="borrar-roca" data-id="${r.id}" title="Borrar Roca" aria-label="Borrar Roca">✕</button></div>
+      <div class="meta">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}${m ? ir("m", m.id, "Meta: " + m.texto) : "<span class='rojo'>sin meta</span>"} ${selMeta(r)}${r.fecha ? " · Fecha " + fCorta(r.fecha) : ""}</div>
+      ${temasDeRoca(r)}</div><button class="x" data-act="borrar-roca" data-id="${r.id}" title="Borrar Roca" aria-label="Borrar Roca">✕</button></div>
     ${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}
     <div class="barra"><i style="width:${progresoRoca(r)}%"></i></div>
     <div class="tenue chico">To-Dos: ${hechos.length} hechos · ${abiertos.length} abiertos</div>
@@ -150,8 +175,10 @@ function vRocas() {
 
 function itemTema(t) {
   const ts = todosDe("temaId", t.id);
-  return `<li class="item"><div class="prio">${t.prioridad || "·"}</div><div class="cuerpo">
-    <div class="tit">${esc(t.texto)}</div>
+  const ms = t.medibleId && D.scorecard.find((m) => m.id === t.medibleId);
+  const origen = [t.rocaId && roca(t.rocaId) ? ir("r", t.rocaId, "Roca: " + roca(t.rocaId).texto) : "", ms ? ir("s", ms.id, "Medible: " + ms.nombre) : ""].filter(Boolean).join(" · ");
+  return `<li class="item" id="it-${t.id}"><div class="prio">${t.prioridad || "·"}</div><div class="cuerpo">
+    <div class="tit">${esc(t.texto)}</div>${origen ? `<div class="sub">${origen}</div>` : ""}
     <div class="sub">${t.dueno ? "Lo trajo " + esc(nombre(t.dueno)) + " · " : ""}desde ${fCorta(t.creado)}</div>
     ${t.solucion ? `<div class="sub"><b>Solución:</b> ${esc(t.solucion)}</div>` : ""}
     ${ts.length ? `<ul class="lista" style="border-top:0;margin-top:4px">${ts.map((x) => itemTodo(x, { sinLiga: true, dueno: true })).join("")}</ul>` : ""}
@@ -207,8 +234,8 @@ function tablaScorecard() {
   const ws = semanas13(), revisar = ws[11];
   if (!D.scorecard.length) return `<p class="vacio">Aún no hay medibles. Agreguen de 5 a 15 números semanales, cada uno con dueño y meta.</p>${formMedible()}`;
   return `<div class="tabla-wrap"><table class="sc"><thead><tr><th class="nom">Medible</th><th>Dueño</th><th>Meta</th>${ws.map((w) => `<th>${fCorta(w)}</th>`).join("")}</tr></thead><tbody>
-    ${D.scorecard.map((m) => `<tr><td class="nom">${esc(m.nombre)}${colorMedible(m, m.valores[revisar]) === "rojo" ? ` <button class="btn mini" data-act="bajar" data-texto="${esc("Scorecard fuera: " + m.nombre)}" data-dueno="${m.dueno}">→ Tema</button>` : ""}</td><td>${m.dueno ? esc(nombre(m.dueno)) : "—"}</td><td>${m.operador === "<=" ? "≤" : "≥"} ${num(m.meta, m.unidad)}</td>
-      ${ws.map((w, i) => { const v = m.valores[w], c = colorMedible(m, v); return `<td class="${c ? "v-" + c : ""} ${i === 11 ? "actual" : ""}">${i >= 11 ? `<input inputmode="decimal" data-act="valor" data-id="${m.id}" data-sem="${w}" value="${v ?? ""}" aria-label="${esc(m.nombre)} semana ${w}">` : num(v, m.unidad)}</td>`; }).join("")}</tr>`).join("")}
+    ${D.scorecard.map((m) => { const tm = temaDeMedible(m); return `<tr id="it-${m.id}"><td class="nom">${esc(m.nombre)}${tm ? ` · ${ir("t", tm.id, "Tema abierto")}` : colorMedible(m, m.valores[revisar]) === "rojo" ? ` <button class="btn mini" data-act="bajar" data-medible="${m.id}" data-texto="${esc("Medible fuera: " + m.nombre)}">→ Tema</button>` : ""}</td><td>${m.dueno ? esc(nombre(m.dueno)) : "—"}</td><td>${m.operador === "<=" ? "≤" : "≥"} ${num(m.meta, m.unidad)}</td>
+      ${ws.map((w, i) => { const v = m.valores[w], c = colorMedible(m, v); return `<td class="${c ? "v-" + c : ""} ${i === 11 ? "actual" : ""}">${i >= 11 ? `<input inputmode="decimal" data-act="valor" data-id="${m.id}" data-sem="${w}" value="${v ?? ""}" aria-label="${esc(m.nombre)} semana ${w}">` : num(v, m.unidad)}</td>`; }).join("")}</tr>`; }).join("")}
   </tbody></table></div><p class="tenue chico">Semana a revisar: ${fCorta(revisar)} (recuadro). Verde = en meta, rojo = fuera. Últimas 13 semanas.</p>${formMedible()}`;
 }
 function contenidoSegmento(id) {
@@ -216,15 +243,18 @@ function contenidoSegmento(id) {
   switch (id) {
     case "segue": return `<ul class="lista">${personas().map((p) => `<li class="item"><div class="cuerpo"><div class="tit">${esc(p.nombre)}</div><div class="sub">Buena noticia personal · Buena noticia de negocio</div></div></li>`).join("")}</ul>`;
     case "scorecard": return tablaScorecard();
-    case "rocas": return `<ul class="lista">${rocasTrim().map((r) => `<li class="item"><div class="cuerpo"><div class="tit">${esc(r.texto)}</div><div class="sub">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}Meta: ${esc(meta(r.metaId)?.texto || "sin meta")}</div>
-      <div class="tema-acc">${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}${r.estado === "fuera" ? ` <button class="btn mini" data-act="bajar" data-texto="${esc("Roca fuera: " + r.texto)}" data-dueno="${r.dueno}">→ Tema</button>` : ""}</div></div></li>`).join("") || '<li class="vacio">Aún no hay Rocas este trimestre. Agréguenlas en la pestaña Rocas.</li>'}</ul>`;
+    case "rocas": return `<ul class="lista">${rocasTrim().map((r) => `<li class="item"><div class="cuerpo"><div class="tit">${ir("r", r.id, r.texto)}</div><div class="sub">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}${meta(r.metaId) ? ir("m", r.metaId, "Meta: " + meta(r.metaId).texto) : "sin meta"} · To-Dos ${todosDe("rocaId", r.id).filter((x) => x.hecho).length}/${todosDe("rocaId", r.id).length}</div>
+      <div class="tema-acc">${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}</div>${temasDeRoca(r)}</div></li>`).join("") || '<li class="vacio">Aún no hay Rocas este trimestre.</li>'}</ul>${formRoca()}`;
     case "titulares": return `<form class="agregar" data-form="titular"><div class="principal"><input name="texto" required placeholder="Cliente / empleado: titular breve…"><button class="btn pri">Agregar</button></div></form>
       <ul class="lista">${(j?.titulares || []).map((t, i) => `<li class="item"><div class="cuerpo"><div class="tit">${esc(t)}</div></div><button class="btn mini" data-act="bajar" data-texto="${esc(t)}" data-dueno="">→ Tema</button><button class="x" data-act="borrar-titular" data-i="${i}" aria-label="Borrar">✕</button></li>`).join("") || '<li class="vacio">Sin titulares todavía.</li>'}</ul>`;
     case "todos": {
-      const [l, dom] = semanaActual();
-      const xs = D.todos.filter((t) => (t.fecha <= dom && !t.hecho) || (t.hecho && t.hechoEl >= sumarDias(l, -7))).sort((a, b) => String(a.fecha || "").localeCompare(String(b.fecha || "")));
-      const s = pctSemana(); return `<div class="tira"><div class="dato"><div class="num ${s.pct == null ? "" : s.pct >= 90 ? "verde" : "rojo"}">${s.pct == null ? "—" : s.pct + "%"}</div><div class="et">Equipo · ${s.hechos}/${s.total} hechos · meta 90%</div></div></div>
-        <ul class="lista">${xs.map((t) => itemTodo(t, { dueno: true })).join("") || '<li class="vacio">Sin To-Dos para revisar.</li>'}</ul>`;
+      const { retr, pend, hechos } = listaRevision(), s = pctSemana();
+      const lst = (xs, vacio) => xs.length ? `<ul class="lista">${xs.map((t) => itemTodo(t, { dueno: true })).join("")}</ul>` : `<div class="vacio">${vacio}</div>`;
+      return `<div class="tira" style="grid-template-columns:1fr">${tilePct(s, "Equipo · ")}</div>
+        <div class="grupo"><h2>Retrasados <span class="cuenta">${retr.length}</span></h2>${lst(retr, "Nada retrasado.")}</div>
+        <div class="grupo"><h2>Pendientes <span class="cuenta">${pend.length}</span></h2>${lst(pend, D.todos.length ? "Sin pendientes." : "Sin To-Dos. Agreguen el primero abajo.")}</div>
+        <div class="grupo"><h2>Hecho (últimos 7 días) <span class="cuenta">${hechos.length}</span></h2>${lst(hechos, "Aún nada hecho.")}</div>
+        ${formTodo({ dueno: "" })}`;
     }
     case "ids": {
       const top = ordenTemas(D.temas.filter((t) => t.estado !== "resuelto" && t.prioridad)), resto = ordenTemas(D.temas.filter((t) => t.estado !== "resuelto" && !t.prioridad));
@@ -274,9 +304,9 @@ function vVTO() {
   const cascada = D.metas.map((m) => {
     const rs = D.rocas.filter((r) => r.metaId === m.id), ts = D.todos.filter((t) => rs.some((r) => r.id === t.rocaId));
     const pr = rs.length ? Math.round(rs.reduce((a, r) => a + progresoRoca(r), 0) / rs.length) : 0;
-    return `<div class="meta-c"><div class="fila-entre"><b>${esc(m.texto)}</b><span class="tenue chico">${m.dueno ? esc(nombre(m.dueno)) : ""} <button class="x" data-act="borrar-meta" data-id="${m.id}" title="Borrar meta" aria-label="Borrar meta">✕</button></span></div>
+    return `<div class="meta-c" id="it-${m.id}"><div class="fila-entre"><b>${esc(m.texto)}</b><span class="tenue chico">${m.dueno ? esc(nombre(m.dueno)) : ""} <button class="x" data-act="borrar-meta" data-id="${m.id}" title="Borrar meta" aria-label="Borrar meta">✕</button></span></div>
       <div class="barra"><i style="width:${pr}%"></i></div><div class="tenue chico">${pr}% · Rocas ${rs.filter((r) => r.estado === "hecha").length}/${rs.length} hechas · To-Dos ${ts.filter((t) => t.hecho).length}/${ts.length}</div>
-      <ul>${rs.map((r) => { const t = todosDe("rocaId", r.id); return `<li><span class="punto p-${r.estado}"></span>${esc(r.texto)}<span class="tenue chico">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}${t.filter((x) => x.hecho).length}/${t.length} To-Dos</span></li>`; }).join("") || '<li class="tenue">Sin Rocas ligadas este trimestre</li>'}</ul></div>`;
+      <ul>${rs.map((r) => { const t = todosDe("rocaId", r.id); return `<li><span class="punto p-${r.estado}"></span>${ir("r", r.id, r.texto)}<span class="tenue chico">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}${t.filter((x) => x.hecho).length}/${t.length} To-Dos</span></li>`; }).join("") || '<li class="tenue">Sin Rocas ligadas este trimestre</li>'}</ul></div>`;
   }).join("");
   const sinMeta = D.rocas.filter((r) => !meta(r.metaId));
   return `<h1>Visión / Tracción</h1><p class="tenue">Meta a 10 años → Imagen a 3 años → Plan a 1 año → Rocas (90 días) → To-Dos (7 días).</p>
@@ -363,7 +393,7 @@ document.addEventListener("click", (e) => {
     case "estado-tema": cambiar(() => { tema(id).estado = val; }); break;
     case "borrar-tema": if (confirm("¿Borrar este tema? Sus To-Dos se quedan sin ligar.")) cambiar(() => { D.temas = D.temas.filter((x) => x.id !== id); D.todos.forEach((t) => { if (t.temaId === id) t.temaId = null; }); }); break;
     case "abrir-solucion": { const c = $("#sol-" + id); c.innerHTML = c.innerHTML ? "" : formSolucion(tema(id)); c.querySelector("textarea")?.focus(); break; }
-    case "bajar": cambiar(() => { D.temas.push({ id: nuevoId("t"), texto: el.dataset.texto, dueno: el.dataset.dueno, prioridad: null, estado: "identificado", solucion: "", creado: hoyISO() }); }, "Se bajó a Temas"); break;
+    case "bajar": cambiar(() => { D.temas.push({ id: nuevoId("t"), texto: el.dataset.texto, dueno: null, prioridad: null, estado: "identificado", solucion: "", creado: hoyISO(), rocaId: el.dataset.roca || null, medibleId: el.dataset.medible || null }); }, "Se bajó a Temas"); break;
     case "borrar-titular": cambiar(() => { junta().titulares.splice(+el.dataset.i, 1); }); break;
     case "borrar-mensaje": cambiar(() => { junta().mensajes.splice(+el.dataset.i, 1); }); break;
     case "calif": cambiar(() => { juntaOCrear().calificaciones[id] = +val; }); break;
@@ -372,7 +402,7 @@ document.addEventListener("click", (e) => {
       pausarSeg(); L.seg++; L.inicioSeg = L.corriendo ? Date.now() : null; guardarL(); render(); scrollTo(0, 0); break;
     case "l10-ir": pausarSeg(); L.seg = +el.dataset.i; L.inicioSeg = L.corriendo ? Date.now() : null; guardarL(); render(); break;
     case "l10-reset": if (confirm("¿Reiniciar los relojes de la junta?")) { L = { seg: 0, corriendo: false, inicioSeg: null, acum: Array(7).fill(0), inicioJunta: null }; guardarL(); render(); } break;
-    case "borrar-roca": if (confirm("¿Borrar esta Roca? Sus To-Dos se quedan sin ligar.")) cambiar(() => { D.rocas = D.rocas.filter((x) => x.id !== id); D.todos.forEach((t) => { if (t.rocaId === id) t.rocaId = null; }); }); break;
+    case "borrar-roca": if (confirm("¿Borrar esta Roca? Sus To-Dos se quedan sin ligar.")) cambiar(() => { D.rocas = D.rocas.filter((x) => x.id !== id); D.todos.forEach((t) => { if (t.rocaId === id) t.rocaId = null; }); D.temas.forEach((t) => { if (t.rocaId === id) t.rocaId = null; }); }); break;
     case "borrar-meta": if (confirm("¿Borrar esta meta anual? Sus Rocas quedan sin meta.")) cambiar(() => { D.metas = D.metas.filter((x) => x.id !== id); D.rocas.forEach((r) => { if (r.metaId === id) r.metaId = null; }); }); break;
     case "publicar": publicar(); break;
     case "descargar": descargar(); break;
@@ -383,6 +413,8 @@ document.addEventListener("click", (e) => {
 document.addEventListener("change", (e) => {
   const el = e.target;
   if (el.dataset.act === "prio-tema") { const v = el.value ? +el.value : null; cambiar(() => { if (v) D.temas.forEach((t) => { if (t.prioridad === v && t.estado !== "resuelto") t.prioridad = null; }); tema(el.dataset.id).prioridad = v; }); }
+  if (el.dataset.act === "liga-todo" && el.value !== "__") { const [k, idl] = el.value.split(":"); cambiar(() => { const t = D.todos.find((x) => x.id === el.dataset.id); t.rocaId = k === "r" ? idl : null; t.temaId = k === "t" ? idl : null; }, "Liga actualizada"); }
+  if (el.dataset.act === "meta-roca" && el.value !== "__") cambiar(() => { roca(el.dataset.id).metaId = el.value || null; }, "Meta actualizada");
   if (el.dataset.act === "valor") { const m = D.scorecard.find((x) => x.id === el.dataset.id); cambiar(() => { const v = el.value.trim().replace(/[$,%\s]/g, ""); if (v === "") delete m.valores[el.dataset.sem]; else m.valores[el.dataset.sem] = Number(v); }); }
 });
 document.addEventListener("submit", (e) => {
@@ -397,7 +429,15 @@ document.addEventListener("submit", (e) => {
   if (tipo === "mensaje" && txt) cambiar(() => juntaOCrear().mensajes.push(txt));
   if (tipo === "solucion") { const t = tema(f.dataset.id); cambiar(() => { t.solucion = (fd.solucion || "").trim(); if (txt) D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno, fecha: fd.fecha, hecho: false, hechoEl: null, rocaId: null, temaId: t.id, creado: hoyISO() }); if (fd.resolver) t.estado = "resuelto"; else if (t.estado === "identificado") t.estado = "discutiendo"; }, txt ? "To-Do creado desde el tema" : "Guardado"); }
 });
-addEventListener("hashchange", () => { vista = (location.hash.match(/#\/(\w+)/) || [])[1] || "todos"; render(); scrollTo(0, 0); });
+function ruta() {
+  const m = location.hash.match(/#\/(\w+)(?:\/([\w-]+))?/) || [];
+  vista = m[1] || "todos"; const foco = m[2];
+  if (vista === "l10" && foco && foco[0] === "s") { pausarSeg(); L.seg = 1; L.inicioSeg = L.corriendo ? Date.now() : null; guardarL(); }
+  render();
+  const el = foco && document.getElementById("it-" + foco);
+  if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("destacado"); setTimeout(() => el.classList.remove("destacado"), 2200); } else scrollTo(0, 0);
+}
+addEventListener("hashchange", ruta);
 
 /* ----- ajustes ----- */
 function abrirAjustes() {
@@ -433,7 +473,7 @@ function purgarViejo() {
 }
 async function cargar() {
   purgarViejo();
-  vista = (location.hash.match(/#\/(\w+)/) || [])[1] || "todos";
+
   let remoto = null;
   if (localStorage.getItem(LS.token)) { try { const r = await gh("GET"); remoto = JSON.parse(b64aTexto(r.content)); } catch (e) { console.warn("API GitHub no disponible, uso data.json", e); } }
   if (!remoto) { const r = await fetch("./data.json?v=" + Date.now(), { cache: "no-store" }); if (!r.ok) throw new Error("data.json HTTP " + r.status); remoto = await r.json(); }
@@ -446,7 +486,7 @@ async function cargar() {
     else if (local.sucio && canon(local.data) !== canon(pub)) pendiente = local;
     else localStorage.removeItem(LS.local);
   }
-  render();
+  ruta();
 }
 init();
 cargar().catch((e) => { $("#vista").innerHTML = `<p class="rojo">No se pudo cargar data.json: ${esc(e.message)}</p>`; console.error(e); });

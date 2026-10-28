@@ -175,3 +175,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
   .duenos,.vto{grid-template-columns:1fr}
   .aviso{bottom:80px}
 }
+.ir{color:var(--acento);text-decoration:none;font-weight:600}
+.ir:hover{text-decoration:underline}
+.liga-sel{border:0;background:transparent;color:var(--tenue);font-size:.78rem;padding:0 2px;min-height:0;width:auto;max-width:150px;text-decoration:underline;cursor:pointer;-webkit-appearance:none;appearance:none}
+.destacado{outline:3px solid var(--acento);outline-offset:3px;border-radius:12px}

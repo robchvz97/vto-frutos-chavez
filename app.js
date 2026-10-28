@@ -71,7 +71,7 @@ function ligaTexto(t) {
   return `<span class="liga">Sin ligar</span>`;
 }
 function itemTodo(t, opts = {}) {
-  const hoy = hoyISO(), venc = !t.hecho && t.fecha < hoy;
+  const hoy = hoyISO(), venc = !t.hecho && !!t.fecha && t.fecha < hoy;
   const fecha = t.hecho ? `Hecho ${fCorta(t.hechoEl)}` : venc ? `<span class="venc">Vencido ${fCorta(t.fecha)} (${diasEntre(t.fecha, hoy)} d)</span>` : `Para ${fCorta(t.fecha)}`;
   return `<li class="item ${t.hecho ? "hecho" : ""}">
     <input type="checkbox" class="check" data-act="toggle-todo" data-id="${t.id}" ${t.hecho ? "checked" : ""} aria-label="Marcar como hecho">
@@ -110,27 +110,32 @@ function vTodos() {
     <span class="tenue chico">Semana del ${fCorta(semanaActual()[0])} al ${fCorta(semanaActual()[1])}</span></div>
   <div class="tira">
     <div class="dato"><div class="num ${s.pct == null ? "" : s.pct >= 90 ? "verde" : "rojo"}">${s.pct == null ? "—" : s.pct + "%"}</div><div class="et">To-Dos hechos esta semana · meta 90%</div></div>
-    <div class="dato"><div class="num">${misRocas.filter((r) => r.estado !== "fuera").length}/${misRocas.length}</div><div class="et">Mis Rocas en camino</div></div>
-    <div class="dato"><div class="num ${meds.length && verdes < meds.length ? "rojo" : "verde"}">${verdes}/${meds.length}</div><div class="et">Mis medibles en verde (sem. ${fCorta(ultima)})</div></div>
+    <div class="dato"><div class="num">${misRocas.length ? misRocas.filter((r) => r.estado !== "fuera").length + "/" + misRocas.length : "—"}</div><div class="et">Mis Rocas en camino</div></div>
+    <div class="dato"><div class="num ${!meds.length ? "" : verdes < meds.length ? "rojo" : "verde"}">${meds.length ? verdes + "/" + meds.length : "—"}</div><div class="et">Mis medibles en verde (sem. ${fCorta(ultima)})</div></div>
   </div>
-  <div class="chico" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:4px">${misRocas.map((r) => `<span style="display:inline-flex;gap:6px;align-items:center"><span class="punto p-${r.estado}"></span>${esc(r.texto)}</span>`).join("") || '<span class="tenue">Sin Rocas este trimestre</span>'}</div>
+  <div class="chico" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:4px">${misRocas.map((r) => `<span style="display:inline-flex;gap:6px;align-items:center"><span class="punto p-${r.estado}"></span>${esc(r.texto)}</span>`).join("") || '<span class="tenue">Aún no tienes Rocas este trimestre.</span>'}</div>
   ${formTodo({ dueno: p })}
   <div class="grupo"><h2>Vencidos <span class="cuenta">${venc.length}</span></h2>${lista(venc, "Nada vencido.")}</div>
-  <div class="grupo"><h2>Esta semana <span class="cuenta">${prox.length}</span></h2>${lista(prox, "Sin pendientes. Agrega uno arriba.")}</div>
-  <div class="grupo"><h2>Hecho (últimos 7 días) <span class="cuenta">${hechos.length}</span></h2>${lista(hechos, "Aún nada esta semana.")}</div>`;
+  <div class="grupo"><h2>Esta semana <span class="cuenta">${prox.length}</span></h2>${lista(prox, mios.length ? "Sin pendientes esta semana." : "Sin To-Dos. Agrega el primero arriba.")}</div>
+  <div class="grupo"><h2>Hecho (últimos 7 días) <span class="cuenta">${hechos.length}</span></h2>${lista(hechos, "Aún nada hecho esta semana.")}</div>`;
 }
 
 function tarjetaRoca(r, conDueno) {
   const m = meta(r.metaId), ts = todosDe("rocaId", r.id), abiertos = ts.filter((t) => !t.hecho), hechos = ts.filter((t) => t.hecho);
   return `<div class="roca">
     <div class="cab"><div><div class="tit">${esc(r.texto)}</div>
-      <div class="meta">${conDueno ? esc(nombre(r.dueno)) + " · " : ""}Meta anual: ${m ? esc(m.texto) : "<span class='rojo'>sin meta</span>"} · Fecha ${fCorta(r.fecha)}</div></div></div>
+      <div class="meta">${conDueno ? esc(nombre(r.dueno)) + " · " : ""}Meta anual: ${m ? esc(m.texto) : "<span class='rojo'>sin meta</span>"}${r.fecha ? " · Fecha " + fCorta(r.fecha) : ""}</div></div><button class="x" data-act="borrar-roca" data-id="${r.id}" title="Borrar Roca" aria-label="Borrar Roca">✕</button></div>
     ${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}
     <div class="barra"><i style="width:${progresoRoca(r)}%"></i></div>
     <div class="tenue chico">To-Dos: ${hechos.length} hechos · ${abiertos.length} abiertos</div>
     <ul class="lista">${[...abiertos, ...hechos].map((t) => itemTodo(t, { sinLiga: true, dueno: t.dueno !== r.dueno })).join("")}</ul>
     <details><summary>+ To-Do para esta Roca</summary>${formTodo({ dueno: r.dueno, liga: "r:" + r.id })}</details>
   </div>`;
+}
+function formRoca() {
+  return `<form class="agregar" data-form="roca"><div class="principal"><input name="texto" required placeholder="Nueva Roca (90 días)…" aria-label="Nueva Roca"><button class="btn pri">Agregar</button></div>
+    <div class="opciones">${selPersonas("dueno", persona())}<input type="date" name="fecha" value="${D.trimestre?.fin || ""}" aria-label="Fecha">
+    <select name="metaId" aria-label="Meta anual"><option value="">${D.metas.length ? "Meta anual…" : "Sin metas anuales aún (agrégalas en V/TO)"}</option>${D.metas.map((m) => `<option value="${m.id}">${esc(m.texto)}</option>`).join("")}</select></div></form>`;
 }
 function vRocas() {
   const t = D.trimestre || {}, rs = rocasTrim();
@@ -142,7 +147,9 @@ function vRocas() {
     <div class="dato"><div class="num rojo">${rs.filter((r) => r.estado === "fuera").length}</div><div class="et">Fuera de camino</div></div>
     <div class="dato"><div class="num">${rs.filter((r) => r.estado === "hecha").length}</div><div class="et">Hechas</div></div>
   </div>
-  <div class="duenos">${personas().map((p) => `<div><h2>${esc(p.nombre)}</h2>${rs.filter((r) => r.dueno === p.id).map((r) => tarjetaRoca(r)).join("") || '<p class="tenue">Sin Rocas.</p>'}</div>`).join("")}</div>`;
+  ${formRoca()}
+  ${rs.length ? "" : '<p class="vacio">Aún no hay Rocas este trimestre. Defínanlas en la junta trimestral (3 a 7, cada una con un dueño).</p>'}
+  <div class="duenos">${personas().map((p) => `<div><h2>${esc(p.nombre)}</h2>${rs.filter((r) => r.dueno === p.id).map((r) => tarjetaRoca(r)).join("") || '<p class="tenue">Sin Rocas para ' + esc(p.nombre) + '.</p>'}</div>`).join("")}</div>`;
 }
 
 function itemTema(t) {
@@ -174,7 +181,7 @@ function vTemas() {
   <form class="agregar" data-form="tema"><div class="principal"><input name="texto" required placeholder="Nuevo tema…" aria-label="Nuevo tema"><button class="btn pri">Agregar</button></div>
     <div class="opciones">${selPersonas("dueno", persona())}</div></form>
   <div class="grupo"><h2>Top 3 <span class="cuenta">${top.length}</span></h2>${top.length ? `<ul class="lista">${top.map(itemTema).join("")}</ul>` : '<div class="vacio">Asigna prioridad 1, 2 y 3 a los temas más importantes.</div>'}</div>
-  <div class="grupo"><h2>Lista <span class="cuenta">${resto.length}</span></h2>${resto.length ? `<ul class="lista">${resto.map(itemTema).join("")}</ul>` : '<div class="vacio">Sin temas pendientes.</div>'}</div>
+  <div class="grupo"><h2>Lista <span class="cuenta">${resto.length}</span></h2>${resto.length ? `<ul class="lista">${resto.map(itemTema).join("")}</ul>` : '<div class="vacio">Sin temas. Agrega el primero arriba.</div>'}</div>
   <details class="grupo"><summary>Resueltos (${res.length})</summary><ul class="lista">${res.map(itemTema).join("")}</ul></details>`;
 }
 
@@ -195,12 +202,18 @@ const mmss = (s) => { const neg = s < 0; s = Math.abs(Math.round(s)); return (ne
 function junta() { const f = hoyISO(); let j = D.juntas.find((x) => x.fecha === f); return j; }
 function juntaOCrear() { let j = junta(); if (!j) { j = { fecha: hoyISO(), calificaciones: {}, titulares: [], mensajes: [] }; D.juntas.push(j); } return j; }
 
+function formMedible() {
+  return `<form class="agregar" data-form="medible"><div class="principal"><input name="nombre" required placeholder="Nuevo medible semanal…" aria-label="Nuevo medible"><button class="btn pri">Agregar</button></div>
+    <div class="opciones">${selPersonas("dueno", persona())}<select name="operador" aria-label="Regla"><option value=">=">≥ (más es mejor)</option><option value="<=">≤ (menos es mejor)</option></select>
+    <input name="meta" inputmode="decimal" required placeholder="Meta semanal" aria-label="Meta semanal"><select name="unidad" aria-label="Unidad"><option value="">Número</option><option value="$">$ MXN</option><option value="%">%</option></select></div></form>`;
+}
 function tablaScorecard() {
   const ws = semanas13(), revisar = ws[11];
+  if (!D.scorecard.length) return `<p class="vacio">Aún no hay medibles. Agreguen de 5 a 15 números semanales, cada uno con dueño y meta.</p>${formMedible()}`;
   return `<div class="tabla-wrap"><table class="sc"><thead><tr><th class="nom">Medible</th><th>Dueño</th><th>Meta</th>${ws.map((w) => `<th>${fCorta(w)}</th>`).join("")}</tr></thead><tbody>
     ${D.scorecard.map((m) => `<tr><td class="nom">${esc(m.nombre)}${colorMedible(m, m.valores[revisar]) === "rojo" ? ` <button class="btn mini" data-act="bajar" data-texto="${esc("Scorecard fuera: " + m.nombre)}" data-dueno="${m.dueno}">→ Tema</button>` : ""}</td><td>${esc(nombre(m.dueno))}</td><td>${m.operador === "<=" ? "≤" : "≥"} ${num(m.meta, m.unidad)}</td>
       ${ws.map((w, i) => { const v = m.valores[w], c = colorMedible(m, v); return `<td class="${c ? "v-" + c : ""} ${i === 11 ? "actual" : ""}">${i >= 11 ? `<input inputmode="decimal" data-act="valor" data-id="${m.id}" data-sem="${w}" value="${v ?? ""}" aria-label="${esc(m.nombre)} semana ${w}">` : num(v, m.unidad)}</td>`; }).join("")}</tr>`).join("")}
-  </tbody></table></div><p class="tenue chico">Semana a revisar: ${fCorta(revisar)} (recuadro). Verde = en meta, rojo = fuera. Últimas 13 semanas.</p>`;
+  </tbody></table></div><p class="tenue chico">Semana a revisar: ${fCorta(revisar)} (recuadro). Verde = en meta, rojo = fuera. Últimas 13 semanas.</p>${formMedible()}`;
 }
 function contenidoSegmento(id) {
   const j = junta();
@@ -208,7 +221,7 @@ function contenidoSegmento(id) {
     case "segue": return `<ul class="lista">${personas().map((p) => `<li class="item"><div class="cuerpo"><div class="tit">${esc(p.nombre)}</div><div class="sub">Buena noticia personal · Buena noticia de negocio</div></div></li>`).join("")}</ul>`;
     case "scorecard": return tablaScorecard();
     case "rocas": return `<ul class="lista">${rocasTrim().map((r) => `<li class="item"><div class="cuerpo"><div class="tit">${esc(r.texto)}</div><div class="sub">${esc(nombre(r.dueno))} · Meta: ${esc(meta(r.metaId)?.texto || "—")}</div>
-      <div class="tema-acc">${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}${r.estado === "fuera" ? ` <button class="btn mini" data-act="bajar" data-texto="${esc("Roca fuera: " + r.texto)}" data-dueno="${r.dueno}">→ Tema</button>` : ""}</div></div></li>`).join("")}</ul>`;
+      <div class="tema-acc">${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}${r.estado === "fuera" ? ` <button class="btn mini" data-act="bajar" data-texto="${esc("Roca fuera: " + r.texto)}" data-dueno="${r.dueno}">→ Tema</button>` : ""}</div></div></li>`).join("") || '<li class="vacio">Aún no hay Rocas este trimestre. Agréguenlas en la pestaña Rocas.</li>'}</ul>`;
     case "titulares": return `<form class="agregar" data-form="titular"><div class="principal"><input name="texto" required placeholder="Cliente / empleado: titular breve…"><button class="btn pri">Agregar</button></div></form>
       <ul class="lista">${(j?.titulares || []).map((t, i) => `<li class="item"><div class="cuerpo"><div class="tit">${esc(t)}</div></div><button class="btn mini" data-act="bajar" data-texto="${esc(t)}" data-dueno="${persona()}">→ Tema</button><button class="x" data-act="borrar-titular" data-i="${i}" aria-label="Borrar">✕</button></li>`).join("") || '<li class="vacio">Sin titulares todavía.</li>'}</ul>`;
     case "todos": {
@@ -219,7 +232,7 @@ function contenidoSegmento(id) {
     }
     case "ids": {
       const top = ordenTemas(D.temas.filter((t) => t.estado !== "resuelto" && t.prioridad)), resto = ordenTemas(D.temas.filter((t) => t.estado !== "resuelto" && !t.prioridad));
-      return `<div class="grupo" style="margin-top:0"><h2>Top 3</h2>${top.length ? `<ul class="lista">${top.map(itemTema).join("")}</ul>` : '<div class="vacio">Pongan prioridad 1, 2, 3 a los temas abajo.</div>'}</div>
+      return `<div class="grupo" style="margin-top:0"><h2>Top 3</h2>${top.length ? `<ul class="lista">${top.map(itemTema).join("")}</ul>` : (D.temas.some((t) => t.estado !== "resuelto") ? '<div class="vacio">Pongan prioridad 1, 2, 3 a los temas abajo.</div>' : '<div class="vacio">Sin temas por resolver. Agreguen uno abajo.</div>')}</div>
         <div class="grupo"><h2>Resto de la lista</h2><ul class="lista">${resto.map(itemTema).join("") || '<li class="vacio">Lista vacía.</li>'}</ul></div>
         <form class="agregar" data-form="tema"><div class="principal"><input name="texto" required placeholder="Nuevo tema…"><button class="btn pri">Agregar</button></div><div class="opciones">${selPersonas("dueno", persona())}</div></form>`;
     }
@@ -258,32 +271,36 @@ function pausarSeg() { if (L.corriendo && L.inicioSeg) { L.acum[L.seg] += (Date.
 /* ----- V/TO ----- */
 function vVTO() {
   const v = D.vto || {}, mk = v.marketing || {}, i3 = v.imagen3 || {}, p1 = v.plan1 || {};
-  const lista = (xs) => `<ul>${(xs || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  const PEND = '<p class="tenue">Pendiente de definir.</p>';
+  const txt = (x) => x ? esc(x) : '<span class="tenue">pendiente</span>';
+  const tf = (f) => f ? " · " + fLarga(f) : "";
+  const lista = (xs) => (xs || []).length ? `<ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : '<p class="tenue">Pendiente.</p>';
   const cascada = D.metas.map((m) => {
     const rs = D.rocas.filter((r) => r.metaId === m.id), ts = D.todos.filter((t) => rs.some((r) => r.id === t.rocaId));
     const pr = rs.length ? Math.round(rs.reduce((a, r) => a + progresoRoca(r), 0) / rs.length) : 0;
-    return `<div class="meta-c"><div class="fila-entre"><b>${esc(m.texto)}</b><span class="tenue chico">${esc(nombre(m.dueno))}</span></div>
+    return `<div class="meta-c"><div class="fila-entre"><b>${esc(m.texto)}</b><span class="tenue chico">${esc(nombre(m.dueno))} <button class="x" data-act="borrar-meta" data-id="${m.id}" title="Borrar meta" aria-label="Borrar meta">✕</button></span></div>
       <div class="barra"><i style="width:${pr}%"></i></div><div class="tenue chico">${pr}% · Rocas ${rs.filter((r) => r.estado === "hecha").length}/${rs.length} hechas · To-Dos ${ts.filter((t) => t.hecho).length}/${ts.length}</div>
-      <ul>${rs.map((r) => { const t = todosDe("rocaId", r.id); return `<li><span class="punto p-${r.estado}"></span>${esc(r.texto)}<span class="tenue chico">${esc(nombre(r.dueno))} · ${t.filter((x) => x.hecho).length}/${t.length} To-Dos</span></li>`; }).join("") || '<li class="tenue">Sin Rocas este trimestre</li>'}</ul></div>`;
+      <ul>${rs.map((r) => { const t = todosDe("rocaId", r.id); return `<li><span class="punto p-${r.estado}"></span>${esc(r.texto)}<span class="tenue chico">${esc(nombre(r.dueno))} · ${t.filter((x) => x.hecho).length}/${t.length} To-Dos</span></li>`; }).join("") || '<li class="tenue">Sin Rocas ligadas este trimestre</li>'}</ul></div>`;
   }).join("");
   const sinMeta = D.rocas.filter((r) => !meta(r.metaId));
   return `<h1>Visión / Tracción</h1><p class="tenue">Meta a 10 años → Imagen a 3 años → Plan a 1 año → Rocas (90 días) → To-Dos (7 días).</p>
   <div class="vto">
     <div>
-      <section><h3>Valores centrales</h3>${(v.valores || []).map((x) => `<p><b>${esc(x.nombre)}</b> — <span class="tenue">${esc(x.descripcion)}</span></p>`).join("")}</section>
-      <section><h3>Enfoque central</h3><p><b>Propósito / causa / pasión:</b> ${esc(v.enfoque?.proposito)}</p><p><b>Nicho:</b> ${esc(v.enfoque?.nicho)}</p></section>
-      <section><h3>Meta a 10 años · ${fLarga(v.meta10?.fecha)}</h3><p style="font-size:1.1rem;font-weight:700">${esc(v.meta10?.texto)}</p></section>
-      <section><h3>Estrategia de marketing</h3><p><b>Mercado objetivo (“La Lista”):</b> ${esc(mk.mercado)}</p><p><b>3 únicos:</b></p><ol>${(mk.unicos || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ol><p><b>Proceso probado:</b> ${esc(mk.proceso)}</p><p><b>Garantía:</b> ${esc(mk.garantia)}</p></section>
-      <section><h3>Imagen a 3 años · ${fLarga(i3.fecha)}</h3><div class="cifras"><div><span>Ingresos</span><b>${dinero(i3.ingresos)}</b></div><div><span>Utilidad</span><b>${dinero(i3.utilidad)}</b></div></div>
+      <section><h3>Valores centrales</h3>${(v.valores || []).map((x) => `<p><b>${esc(x.nombre)}</b>${x.descripcion ? ` — <span class="tenue">${esc(x.descripcion)}</span>` : ""}</p>`).join("") || PEND}</section>
+      <section><h3>Enfoque central</h3><p><b>Propósito / causa / pasión:</b> ${txt(v.enfoque?.proposito)}</p><p><b>Nicho:</b> ${txt(v.enfoque?.nicho)}</p></section>
+      <section><h3>Meta a 10 años${tf(v.meta10?.fecha)}</h3>${v.meta10?.texto ? `<p style="font-size:1.1rem;font-weight:700">${esc(v.meta10.texto)}</p>` : PEND}</section>
+      <section><h3>Estrategia de marketing</h3><p><b>Mercado objetivo (“La Lista”):</b> ${txt(mk.mercado)}</p><p><b>3 únicos:</b></p>${(mk.unicos || []).length ? `<ol>${mk.unicos.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : '<p class="tenue">Pendiente.</p>'}<p><b>Proceso probado:</b> ${txt(mk.proceso)}</p><p><b>Garantía:</b> ${txt(mk.garantia)}</p></section>
+      <section><h3>Imagen a 3 años${tf(i3.fecha)}</h3><div class="cifras"><div><span>Ingresos</span><b>${dinero(i3.ingresos)}</b></div><div><span>Utilidad</span><b>${dinero(i3.utilidad)}</b></div></div>
         <p><b>Medibles</b></p>${lista(i3.medibles)}<p><b>¿Cómo se ve?</b></p>${lista(i3.comoSeVe)}</section>
     </div>
     <div>
-      <section><h3>Plan a 1 año · ${fLarga(p1.fecha)}</h3><div class="cifras"><div><span>Ingresos</span><b>${dinero(p1.ingresos)}</b></div><div><span>Utilidad</span><b>${dinero(p1.utilidad)}</b></div></div>
+      <section><h3>Plan a 1 año${tf(p1.fecha)}</h3><div class="cifras"><div><span>Ingresos</span><b>${dinero(p1.ingresos)}</b></div><div><span>Utilidad</span><b>${dinero(p1.utilidad)}</b></div></div>
         <p><b>Medibles</b></p>${lista(p1.medibles)}</section>
-      <section><h3>Metas del año → Rocas ${esc(D.trimestre?.nombre || "")} → To-Dos</h3><div class="cascada">${cascada}</div>
+      <section><h3>Metas del año → Rocas ${esc(D.trimestre?.nombre || "")} → To-Dos</h3><div class="cascada">${cascada || '<p class="tenue">Aún no hay metas del plan anual (1 a 7). Agrega la primera:</p>'}</div>
+        <form class="agregar" data-form="meta"><div class="principal"><input name="texto" required placeholder="Nueva meta del año…" aria-label="Nueva meta del año"><button class="btn pri">Agregar</button></div><div class="opciones">${selPersonas("dueno", persona())}</div></form>
         ${sinMeta.length ? `<p class="rojo chico">Rocas sin meta anual: ${sinMeta.map((r) => esc(r.texto)).join(", ")}</p>` : ""}</section>
       <section><h3>Temas abiertos</h3><p>${D.temas.filter((t) => t.estado !== "resuelto").length} temas · <a href="#/temas">ver lista</a></p></section>
-      <section><h3>Gráfica de responsabilidades</h3><div class="asientos">${(D.responsabilidades || []).map((a) => `<div class="asiento"><b>${esc(a.asiento)}</b><span class="tenue chico">${esc(nombre(a.persona))}</span><ul>${(a.roles || []).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>`).join("")}</div></section>
+      <section><h3>Gráfica de responsabilidades</h3><div class="asientos">${(D.responsabilidades || []).map((a) => `<div class="asiento"><b>${esc(a.asiento)}</b><span class="tenue chico">${esc(nombre(a.persona))}</span><ul>${(a.roles || []).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>`).join("") || '<p class="tenue">Pendiente de definir: quién ocupa cada asiento (Visionario, Integrador, Ventas, Operaciones, Finanzas).</p>'}</div></section>
     </div>
   </div>`;
 }
@@ -359,6 +376,8 @@ document.addEventListener("click", (e) => {
       pausarSeg(); L.seg++; L.inicioSeg = L.corriendo ? Date.now() : null; guardarL(); render(); scrollTo(0, 0); break;
     case "l10-ir": pausarSeg(); L.seg = +el.dataset.i; L.inicioSeg = L.corriendo ? Date.now() : null; guardarL(); render(); break;
     case "l10-reset": if (confirm("¿Reiniciar los relojes de la junta?")) { L = { seg: 0, corriendo: false, inicioSeg: null, acum: Array(7).fill(0), inicioJunta: null }; guardarL(); render(); } break;
+    case "borrar-roca": if (confirm("¿Borrar esta Roca? Sus To-Dos se quedan sin ligar.")) cambiar(() => { D.rocas = D.rocas.filter((x) => x.id !== id); D.todos.forEach((t) => { if (t.rocaId === id) t.rocaId = null; }); }); break;
+    case "borrar-meta": if (confirm("¿Borrar esta meta anual? Sus Rocas quedan sin meta.")) cambiar(() => { D.metas = D.metas.filter((x) => x.id !== id); D.rocas.forEach((r) => { if (r.metaId === id) r.metaId = null; }); }); break;
     case "publicar": publicar(); break;
     case "descargar": descargar(); break;
     case "recuperar": D = pendiente.data; pendiente = null; guardar(); render(); aviso("Cambios recuperados. Revísalos y publica."); break;
@@ -375,6 +394,9 @@ document.addEventListener("submit", (e) => {
   const fd = Object.fromEntries(new FormData(f)), tipo = f.dataset.form, txt = (fd.texto || "").trim();
   if (tipo === "todo" && txt) { const [k, idl] = (fd.liga || "").split(":"); cambiar(() => D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno, fecha: fd.fecha || sumarDias(hoyISO(), 7), hecho: false, hechoEl: null, rocaId: k === "r" ? idl : null, temaId: k === "t" ? idl : null, creado: hoyISO() }), "To-Do agregado"); }
   if (tipo === "tema" && txt) cambiar(() => D.temas.push({ id: nuevoId("t"), texto: txt, dueno: fd.dueno, prioridad: null, estado: "identificado", solucion: "", creado: hoyISO() }), "Tema agregado");
+  if (tipo === "roca" && txt) cambiar(() => D.rocas.push({ id: nuevoId("r"), texto: txt, dueno: fd.dueno, metaId: fd.metaId || null, estado: "en_camino", fecha: fd.fecha || D.trimestre?.fin || "" }), "Roca agregada");
+  if (tipo === "meta" && txt) cambiar(() => D.metas.push({ id: nuevoId("m"), texto: txt, dueno: fd.dueno }), "Meta agregada");
+  if (tipo === "medible" && (fd.nombre || "").trim()) { const mv = Number(String(fd.meta).replace(/[$,%\s]/g, "")); if (isNaN(mv)) { aviso("La meta debe ser un número"); return; } cambiar(() => D.scorecard.push({ id: nuevoId("s"), nombre: fd.nombre.trim(), dueno: fd.dueno, operador: fd.operador, meta: mv, unidad: fd.unidad, valores: {} }), "Medible agregado"); }
   if (tipo === "titular" && txt) cambiar(() => juntaOCrear().titulares.push(txt));
   if (tipo === "mensaje" && txt) cambiar(() => juntaOCrear().mensajes.push(txt));
   if (tipo === "solucion") { const t = tema(f.dataset.id); cambiar(() => { t.solucion = (fd.solucion || "").trim(); if (txt) D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno, fecha: fd.fecha, hecho: false, hechoEl: null, rocaId: null, temaId: t.id, creado: hoyISO() }); if (fd.resolver) t.estado = "resuelto"; else if (t.estado === "identificado") t.estado = "discutiendo"; }, txt ? "To-Do creado desde el tema" : "Guardado"); }
@@ -413,7 +435,8 @@ async function cargar() {
   let remoto = null;
   if (localStorage.getItem(LS.token)) { try { const r = await gh("GET"); remoto = JSON.parse(b64aTexto(r.content)); } catch (e) { console.warn("API GitHub no disponible, uso data.json", e); } }
   if (!remoto) { const r = await fetch("./data.json?v=" + Date.now(), { cache: "no-store" }); if (!r.ok) throw new Error("data.json HTTP " + r.status); remoto = await r.json(); }
-  for (const k of ["metas", "rocas", "todos", "temas", "scorecard", "juntas", "personas"]) remoto[k] = remoto[k] || [];
+  for (const k of ["metas", "rocas", "todos", "temas", "scorecard", "juntas", "personas", "responsabilidades"]) remoto[k] = remoto[k] || [];
+  remoto.vto = remoto.vto || {};
   pub = remoto; base = hash(canon(pub)); D = clon(pub);
   let local = null; try { local = JSON.parse(localStorage.getItem(LS.local)); } catch {}
   if (local?.data) {

@@ -110,6 +110,28 @@
       "rocaId": null,
       "temaId": null,
       "creado": "2026-10-28"
+    },
+    {
+      "id": "d6",
+      "texto": "Meter promoción a mitad de la semana (banco de imágenes).",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
+    },
+    {
+      "id": "d7",
+      "texto": "Estar subiendo imágenes o posts a redes.",
+      "dueno": null,
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-10-28"
     }
   ],
   "temas": [],

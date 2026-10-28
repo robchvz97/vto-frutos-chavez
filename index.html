@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es-MX" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V/TO · FRÜTOS Chávez</title>
+<meta name="description" content="Organizador de Visión y Tracción (V/TO) de FRÜTOS Chávez">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<script src="./app.js" defer></script>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<div id="banner-ejemplo" class="banner" hidden>🍋 Datos de ejemplo — pendientes de llenar</div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🍊</span>
+    <div><h1 id="empresa">FRÜTOS Chávez</h1><p id="subtitulo" class="muted"></p></div>
+  </div>
+  <nav class="tabs">
+    <a href="#vision">Visión</a><a href="#traccion">Tracción</a><a href="#rocas">Rocas</a><a href="#temas">Temas</a>
+  </nav>
+  <div class="actions">
+    <span class="pill" id="actualizado"></span>
+    <button id="btn-editar" class="btn">✏️ Editar</button>
+    <button id="btn-tema" class="btn icon" title="Cambiar tema">🌙</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero card glow reveal">
+    <div>
+      <p class="eyebrow">Organizador de Visión y Tracción · EOS®</p>
+      <h2 id="hero-proposito">—</h2>
+      <p id="hero-nicho" class="muted"></p>
+    </div>
+    <div class="countdowns">
+      <div class="cd"><span class="cd-label">Rocas del trimestre</span><span class="cd-num" id="cd-rocas">—</span><span class="cd-sub" id="cd-rocas-f"></span></div>
+      <div class="cd"><span class="cd-label">Plan a 1 año</span><span class="cd-num" id="cd-1">—</span><span class="cd-sub" id="cd-1-f"></span></div>
+      <div class="cd"><span class="cd-label">Imagen a 3 años</span><span class="cd-num" id="cd-3">—</span><span class="cd-sub" id="cd-3-f"></span></div>
+      <div class="cd"><span class="cd-label">Meta a 10 años</span><span class="cd-num" id="cd-10">—</span><span class="cd-sub" id="cd-10-f"></span></div>
+    </div>
+  </section>
+
+  <section class="kpis reveal" id="kpis"></section>
+
+  <h2 class="section-title" id="vision"><span>01</span> Visión</h2>
+  <div class="grid">
+    <article class="card reveal span-2">
+      <h3>💎 Valores centrales</h3><p class="hint">Quiénes somos: contratamos, evaluamos y reconocemos con base en ellos.</p>
+      <div id="valores" class="values"></div>
+    </article>
+    <article class="card reveal">
+      <h3>🎯 Enfoque central</h3>
+      <p class="label">Propósito / Causa / Pasión</p><p id="ec-proposito"></p>
+      <p class="label">Nicho</p><p id="ec-nicho"></p>
+    </article>
+    <article class="card reveal accent-mango">
+      <h3>🚀 Meta a 10 años</h3>
+      <p id="m10-meta" class="big-quote"></p>
+      <p class="pill" id="m10-fecha"></p>
+    </article>
+    <article class="card reveal span-2">
+      <h3>📣 Estrategia de marketing</h3>
+      <div class="mk">
+        <div><p class="label">Mercado objetivo / "La Lista"</p><p id="mk-mercado"></p>
+          <p class="label">Garantía</p><p id="mk-garantia" class="guarantee"></p></div>
+        <div><p class="label">Nuestros 3 únicos</p><ol id="mk-unicos" class="uniques"></ol></div>
+      </div>
+      <p class="label">Proceso probado</p><div id="mk-proceso" class="process"></div>
+    </article>
+    <article class="card reveal span-2">
+      <h3>🔭 Imagen a 3 años</h3>
+      <div class="three">
+        <div class="stat"><span>Fecha</span><b id="i3-fecha"></b></div>
+        <div class="stat"><span>Ingresos</span><b id="i3-ingresos"></b></div>
+        <div class="stat"><span>Utilidad</span><b id="i3-utilidad"></b></div>
+      </div>
+      <div class="mk">
+        <div><p class="label">Medibles</p><ul id="i3-medibles" class="checks"></ul></div>
+        <div><p class="label">¿Cómo se ve?</p><ul id="i3-como" class="checks"></ul></div>
+      </div>
+    </article>
+  </div>
+
+  <h2 class="section-title" id="traccion"><span>02</span> Tracción</h2>
+  <div class="grid">
+    <article class="card reveal span-2">
+      <h3>📅 Plan a 1 año</h3>
+      <div class="three">
+        <div class="stat"><span>Fecha</span><b id="p1-fecha"></b></div>
+        <div class="stat"><span>Ingresos meta</span><b id="p1-ingresos"></b></div>
+        <div class="stat"><span>Utilidad meta</span><b id="p1-utilidad"></b></div>
+      </div>
+      <p class="label">Medibles</p><ul id="p1-medibles" class="checks inline"></ul>
+      <p class="label">Metas del año</p><div id="p1-metas" class="goals"></div>
+    </article>
+    <article class="card reveal span-2">
+      <div class="row-between"><h3>💰 Ingresos y utilidad: meta vs. real</h3><span class="muted small" id="fin-nota"></span></div>
+      <div class="chart-wrap"><canvas id="chart-fin"></canvas></div>
+      <div class="chart-wrap small-chart"><canvas id="chart-acum"></canvas></div>
+    </article>
+  </div>
+
+  <h2 class="section-title" id="rocas"><span>03</span> Rocas <small id="rocas-trim"></small></h2>
+  <article class="card reveal">
+    <div class="row-between wrap">
+      <div class="filters" id="filtro-rocas"></div>
+      <div class="rock-summary" id="rocas-resumen"></div>
+    </div>
+    <div id="lista-rocas" class="rocks"></div>
+  </article>
+
+  <h2 class="section-title" id="temas"><span>04</span> Lista de temas</h2>
+  <article class="card reveal">
+    <div class="row-between wrap">
+      <div class="filters" id="filtro-prioridad"></div>
+      <label class="toggle"><input type="checkbox" id="ver-resueltos"> Mostrar resueltos</label>
+    </div>
+    <div id="lista-temas" class="issues"></div>
+  </article>
+
+  <footer class="foot muted small">
+    Estructura basada en el <a href="https://www.eosworldwide.com/blog/whats-in-your-v-to" target="_blank" rel="noopener">V/TO™ de EOS®</a>.
+    Contenido en <code>data.json</code> · Hecho con 🍓🥭🍋 para FRÜTOS Chávez
+  </footer>
+</main>
+
+<!-- Editor -->
+<div id="editor" class="drawer" hidden>
+  <div class="drawer-panel">
+    <div class="drawer-head">
+      <h3>✏️ Modo edición</h3>
+      <button class="btn icon" id="ed-cerrar">✕</button>
+    </div>
+    <p class="muted small">Los cambios se guardan sólo en este navegador. Para publicarlos, descarga <code>data.json</code> y súbelo al repositorio.</p>
+    <div class="ed-tabs"><button class="btn sm active" data-modo="form">Formulario</button><button class="btn sm" data-modo="json">JSON</button></div>
+    <div id="ed-form" class="ed-form"></div>
+    <textarea id="ed-json" class="ed-json" spellcheck="false" hidden></textarea>
+    <p id="ed-error" class="error small"></p>
+    <div class="drawer-foot">
+      <button class="btn" id="ed-aplicar">👀 Aplicar vista previa</button>
+      <button class="btn primary" id="ed-descargar">⬇️ Descargar data.json</button>
+      <button class="btn ghost" id="ed-reset">↺ Restablecer</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+</body>
+</html>

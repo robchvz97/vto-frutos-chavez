@@ -1,0 +1,87 @@
+{
+  "ejemplo": true,
+  "empresa": "FRÜTOS Chávez",
+  "subtitulo": "Distribución de fruta fresca",
+  "ultimaActualizacion": "2026-10-28",
+  "socios": ["Roberto", "Socio"],
+  "vision": {
+    "valoresCentrales": [
+      { "nombre": "[Ejemplo] Frescura sin excusas", "descripcion": "Entregamos solo fruta que nosotros mismos nos comeríamos." },
+      { "nombre": "[Ejemplo] Palabra cumplida", "descripcion": "Si prometemos una hora de entrega, llegamos a esa hora." },
+      { "nombre": "[Ejemplo] Trato de familia", "descripcion": "Clientes, proveedores y equipo se tratan con respeto y cercanía." },
+      { "nombre": "[Ejemplo] Mejora constante", "descripcion": "Cada semana buscamos hacer algo un poco mejor que la anterior." }
+    ],
+    "enfoqueCentral": {
+      "proposito": "[Ejemplo] Llevar fruta fresca y de calidad a cada negocio de nuestra ciudad, apoyando al campo mexicano.",
+      "nicho": "[Ejemplo] Distribución de fruta fresca de alta rotación a restaurantes, cafeterías, juguerías y tienditas en la zona metropolitana."
+    },
+    "meta10Anos": {
+      "fecha": "2036-12-31",
+      "meta": "[Ejemplo] Ser la distribuidora de fruta #1 en confianza del occidente de México, con $100 millones MXN de venta anual."
+    },
+    "estrategiaMarketing": {
+      "mercadoObjetivo": "[Ejemplo] Restaurantes, cafeterías, juguerías, hoteles boutique y tiendas de abarrotes en un radio de 30 km, que compran al menos 2 veces por semana.",
+      "tresUnicos": [
+        "[Ejemplo] Entrega al día siguiente antes de las 9:00 a.m.",
+        "[Ejemplo] Fruta seleccionada a mano, madurez lista para usar",
+        "[Ejemplo] Pedido fácil por WhatsApp y remisión clara"
+      ],
+      "procesoProbado": ["[Ejemplo] Pedido por WhatsApp", "[Ejemplo] Compra en central de abastos", "[Ejemplo] Selección y empaque", "[Ejemplo] Ruta de entrega", "[Ejemplo] Remisión y cobro", "[Ejemplo] Seguimiento"],
+      "garantia": "[Ejemplo] Si una pieza no llega en buen estado, la reponemos sin costo en tu siguiente entrega."
+    },
+    "imagen3Anos": {
+      "fecha": "2029-12-31",
+      "ingresos": 30000000,
+      "utilidad": 3000000,
+      "medibles": ["[Ejemplo] 300 clientes activos", "[Ejemplo] 98% de entregas a tiempo", "[Ejemplo] Merma menor a 3%"],
+      "comoSeVe": [
+        "[Ejemplo] 25 colaboradores",
+        "[Ejemplo] 4 camionetas refrigeradas",
+        "[Ejemplo] Bodega propia con cámara fría",
+        "[Ejemplo] Línea de fruta picada para negocios",
+        "[Ejemplo] Presencia en 2 ciudades"
+      ]
+    }
+  },
+  "traccion": {
+    "plan1Ano": {
+      "fecha": "2027-12-31",
+      "ingresos": 10000000,
+      "utilidad": 900000,
+      "medibles": ["[Ejemplo] 120 clientes activos", "[Ejemplo] 95% de entregas a tiempo"],
+      "metas": [
+        { "meta": "[Ejemplo] Llegar a 120 clientes activos", "progreso": 45, "responsable": "Roberto" },
+        { "meta": "[Ejemplo] Bajar la merma a menos de 5%", "progreso": 60, "responsable": "Socio" },
+        { "meta": "[Ejemplo] Comprar segunda camioneta", "progreso": 30, "responsable": "Socio" },
+        { "meta": "[Ejemplo] Sistema de pedidos y remisiones 100% digital", "progreso": 80, "responsable": "Roberto" }
+      ]
+    },
+    "financieros": {
+      "nota": "Cifras mensuales en MXN",
+      "meses": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+      "ingresosMeta": [700000, 720000, 750000, 780000, 800000, 820000, 850000, 870000, 880000, 900000, 950000, 980000],
+      "ingresosReal": [650000, 700000, 760000, 770000, 810000, 800000, 840000, 880000, 870000, 905000, null, null],
+      "utilidadMeta": [60000, 62000, 65000, 68000, 70000, 72000, 75000, 77000, 78000, 80000, 85000, 88000],
+      "utilidadReal": [50000, 58000, 66000, 64000, 71000, 69000, 74000, 79000, 76000, 81000, null, null]
+    },
+    "rocas": {
+      "trimestre": "T4 2026",
+      "fechaLimite": "2026-12-31",
+      "lista": [
+        { "roca": "[Ejemplo] Cerrar 15 clientes nuevos de restaurantes", "responsable": "Roberto", "progreso": 60, "estado": "en curso", "fecha": "2026-12-31" },
+        { "roca": "[Ejemplo] Implementar control de merma diario", "responsable": "Socio", "progreso": 40, "estado": "atrasada", "fecha": "2026-12-15" },
+        { "roca": "[Ejemplo] Negociar precio fijo con 2 proveedores de aguacate", "responsable": "Socio", "progreso": 100, "estado": "en curso", "fecha": "2026-11-30" },
+        { "roca": "[Ejemplo] Remisiones automáticas desde Odoo", "responsable": "Roberto", "progreso": 85, "estado": "en curso", "fecha": "2026-11-20" },
+        { "roca": "[Ejemplo] Definir rutas fijas por zona", "responsable": "Socio", "progreso": 20, "estado": "atrasada", "fecha": "2026-12-20" }
+      ]
+    },
+    "temas": [
+      { "tema": "[Ejemplo] Clientes con pagos atrasados mayores a 30 días", "prioridad": "alta", "tipo": "problema", "resuelto": false },
+      { "tema": "[Ejemplo] Precio del limón muy volátil", "prioridad": "alta", "tipo": "obstáculo", "resuelto": false },
+      { "tema": "[Ejemplo] Oportunidad: vender fruta picada a cafeterías", "prioridad": "media", "tipo": "oportunidad", "resuelto": false },
+      { "tema": "[Ejemplo] Falta de espacio en bodega", "prioridad": "media", "tipo": "reto", "resuelto": false },
+      { "tema": "[Ejemplo] Idea: programa de lealtad para tienditas", "prioridad": "baja", "tipo": "idea", "resuelto": false },
+      { "tema": "[Ejemplo] Cambio de proveedor de cajas", "prioridad": "baja", "tipo": "problema", "resuelto": true }
+    ]
+  }
+}

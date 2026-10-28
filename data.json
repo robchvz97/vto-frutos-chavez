@@ -1,87 +1,536 @@
 {
   "ejemplo": true,
   "empresa": "FRÜTOS Chávez",
-  "subtitulo": "Distribución de fruta fresca",
-  "ultimaActualizacion": "2026-10-28",
-  "socios": ["Roberto", "Socio"],
-  "vision": {
-    "valoresCentrales": [
-      { "nombre": "[Ejemplo] Frescura sin excusas", "descripcion": "Entregamos solo fruta que nosotros mismos nos comeríamos." },
-      { "nombre": "[Ejemplo] Palabra cumplida", "descripcion": "Si prometemos una hora de entrega, llegamos a esa hora." },
-      { "nombre": "[Ejemplo] Trato de familia", "descripcion": "Clientes, proveedores y equipo se tratan con respeto y cercanía." },
-      { "nombre": "[Ejemplo] Mejora constante", "descripcion": "Cada semana buscamos hacer algo un poco mejor que la anterior." }
+  "actualizado": "2026-10-28",
+  "personas": [
+    {
+      "id": "roberto",
+      "nombre": "Roberto"
+    },
+    {
+      "id": "socio",
+      "nombre": "Socio"
+    }
+  ],
+  "github": {
+    "owner": "robchvz97",
+    "repo": "vto-frutos-chavez",
+    "rama": "main",
+    "ruta": "data.json"
+  },
+  "trimestre": {
+    "nombre": "T4 2026",
+    "inicio": "2026-10-01",
+    "fin": "2026-12-31"
+  },
+  "vto": {
+    "valores": [
+      {
+        "nombre": "[Ejemplo] Frescura sin excusas",
+        "descripcion": "Sólo entregamos fruta que nosotros mismos nos comeríamos."
+      },
+      {
+        "nombre": "[Ejemplo] Palabra cumplida",
+        "descripcion": "Si prometemos una hora, llegamos a esa hora."
+      },
+      {
+        "nombre": "[Ejemplo] Trato de familia",
+        "descripcion": "Clientes, proveedores y equipo se tratan con respeto y cercanía."
+      },
+      {
+        "nombre": "[Ejemplo] Mejora constante",
+        "descripcion": "Cada semana hacemos algo un poco mejor."
+      }
     ],
-    "enfoqueCentral": {
-      "proposito": "[Ejemplo] Llevar fruta fresca y de calidad a cada negocio de nuestra ciudad, apoyando al campo mexicano.",
-      "nicho": "[Ejemplo] Distribución de fruta fresca de alta rotación a restaurantes, cafeterías, juguerías y tienditas en la zona metropolitana."
+    "enfoque": {
+      "proposito": "[Ejemplo] Llevar fruta fresca y de calidad a cada negocio de la ciudad, apoyando al campo mexicano.",
+      "nicho": "[Ejemplo] Distribución de fruta de alta rotación a restaurantes, cafeterías, juguerías y tienditas."
     },
-    "meta10Anos": {
+    "meta10": {
       "fecha": "2036-12-31",
-      "meta": "[Ejemplo] Ser la distribuidora de fruta #1 en confianza del occidente de México, con $100 millones MXN de venta anual."
+      "texto": "[Ejemplo] Ser la distribuidora de fruta #1 en confianza del occidente de México, con $100 M MXN de venta anual."
     },
-    "estrategiaMarketing": {
-      "mercadoObjetivo": "[Ejemplo] Restaurantes, cafeterías, juguerías, hoteles boutique y tiendas de abarrotes en un radio de 30 km, que compran al menos 2 veces por semana.",
-      "tresUnicos": [
-        "[Ejemplo] Entrega al día siguiente antes de las 9:00 a.m.",
-        "[Ejemplo] Fruta seleccionada a mano, madurez lista para usar",
+    "marketing": {
+      "mercado": "[Ejemplo] Restaurantes, cafeterías, juguerías, hoteles boutique y tiendas de abarrotes a 30 km, que compran 2+ veces por semana.",
+      "unicos": [
+        "[Ejemplo] Entrega antes de las 9:00 a.m.",
+        "[Ejemplo] Fruta seleccionada a mano, lista para usar",
         "[Ejemplo] Pedido fácil por WhatsApp y remisión clara"
       ],
-      "procesoProbado": ["[Ejemplo] Pedido por WhatsApp", "[Ejemplo] Compra en central de abastos", "[Ejemplo] Selección y empaque", "[Ejemplo] Ruta de entrega", "[Ejemplo] Remisión y cobro", "[Ejemplo] Seguimiento"],
+      "proceso": "[Ejemplo] Pedido por WhatsApp → Compra en central de abastos → Selección y empaque → Ruta de entrega → Remisión y cobro → Seguimiento",
       "garantia": "[Ejemplo] Si una pieza no llega en buen estado, la reponemos sin costo en tu siguiente entrega."
     },
-    "imagen3Anos": {
+    "imagen3": {
       "fecha": "2029-12-31",
       "ingresos": 30000000,
       "utilidad": 3000000,
-      "medibles": ["[Ejemplo] 300 clientes activos", "[Ejemplo] 98% de entregas a tiempo", "[Ejemplo] Merma menor a 3%"],
+      "medibles": [
+        "[Ejemplo] 300 clientes activos",
+        "[Ejemplo] 98% de entregas a tiempo",
+        "[Ejemplo] Merma menor a 3%"
+      ],
       "comoSeVe": [
         "[Ejemplo] 25 colaboradores",
         "[Ejemplo] 4 camionetas refrigeradas",
         "[Ejemplo] Bodega propia con cámara fría",
-        "[Ejemplo] Línea de fruta picada para negocios",
+        "[Ejemplo] Línea de fruta picada",
         "[Ejemplo] Presencia en 2 ciudades"
       ]
-    }
-  },
-  "traccion": {
-    "plan1Ano": {
+    },
+    "plan1": {
       "fecha": "2027-12-31",
       "ingresos": 10000000,
       "utilidad": 900000,
-      "medibles": ["[Ejemplo] 120 clientes activos", "[Ejemplo] 95% de entregas a tiempo"],
-      "metas": [
-        { "meta": "[Ejemplo] Llegar a 120 clientes activos", "progreso": 45, "responsable": "Roberto" },
-        { "meta": "[Ejemplo] Bajar la merma a menos de 5%", "progreso": 60, "responsable": "Socio" },
-        { "meta": "[Ejemplo] Comprar segunda camioneta", "progreso": 30, "responsable": "Socio" },
-        { "meta": "[Ejemplo] Sistema de pedidos y remisiones 100% digital", "progreso": 80, "responsable": "Roberto" }
+      "medibles": [
+        "[Ejemplo] 120 clientes activos",
+        "[Ejemplo] 95% de entregas a tiempo"
+      ]
+    }
+  },
+  "metas": [
+    {
+      "id": "m1",
+      "texto": "[Ejemplo] Llegar a 120 clientes activos",
+      "dueno": "roberto"
+    },
+    {
+      "id": "m2",
+      "texto": "[Ejemplo] Bajar la merma a menos de 4%",
+      "dueno": "socio"
+    },
+    {
+      "id": "m3",
+      "texto": "[Ejemplo] Cartera vencida menor a 10% de la venta",
+      "dueno": "roberto"
+    },
+    {
+      "id": "m4",
+      "texto": "[Ejemplo] Segunda camioneta y rutas fijas por zona",
+      "dueno": "socio"
+    },
+    {
+      "id": "m5",
+      "texto": "[Ejemplo] Pedidos y remisiones 100% en Odoo",
+      "dueno": "roberto"
+    }
+  ],
+  "rocas": [
+    {
+      "id": "r1",
+      "texto": "[Ejemplo] Cerrar 15 restaurantes nuevos",
+      "dueno": "roberto",
+      "metaId": "m1",
+      "estado": "en_camino",
+      "fecha": "2026-12-31"
+    },
+    {
+      "id": "r2",
+      "texto": "[Ejemplo] Control de merma diario en bodega",
+      "dueno": "socio",
+      "metaId": "m2",
+      "estado": "fuera",
+      "fecha": "2026-12-31"
+    },
+    {
+      "id": "r3",
+      "texto": "[Ejemplo] Cobrar 80% de la cartera mayor a 30 días",
+      "dueno": "roberto",
+      "metaId": "m3",
+      "estado": "en_camino",
+      "fecha": "2026-12-31"
+    },
+    {
+      "id": "r4",
+      "texto": "[Ejemplo] Definir 4 rutas fijas por zona",
+      "dueno": "socio",
+      "metaId": "m4",
+      "estado": "en_camino",
+      "fecha": "2026-12-31"
+    },
+    {
+      "id": "r5",
+      "texto": "[Ejemplo] Remisiones automáticas desde Odoo",
+      "dueno": "roberto",
+      "metaId": "m5",
+      "estado": "hecha",
+      "fecha": "2026-12-31"
+    }
+  ],
+  "todos": [
+    {
+      "id": "d1",
+      "texto": "[Ejemplo] Visitar 5 restaurantes de la zona Providencia",
+      "dueno": "roberto",
+      "fecha": "2026-10-30",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": "r1",
+      "temaId": null,
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d2",
+      "texto": "[Ejemplo] Mandar lista de precios nueva a prospectos",
+      "dueno": "roberto",
+      "fecha": "2026-10-27",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": "r1",
+      "temaId": null,
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d3",
+      "texto": "[Ejemplo] Llamar a los 5 clientes con mayor saldo vencido",
+      "dueno": "roberto",
+      "fecha": "2026-10-28",
+      "hecho": true,
+      "hechoEl": "2026-10-27",
+      "rocaId": "r3",
+      "temaId": "t1",
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d4",
+      "texto": "[Ejemplo] Proponer política de crédito (máx. 15 días)",
+      "dueno": "roberto",
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": "t1",
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d5",
+      "texto": "[Ejemplo] Hacer formato de registro de merma diaria",
+      "dueno": "socio",
+      "fecha": "2026-10-24",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": "r2",
+      "temaId": null,
+      "creado": "2026-10-14"
+    },
+    {
+      "id": "d6",
+      "texto": "[Ejemplo] Pesar merma de la semana y reportar",
+      "dueno": "socio",
+      "fecha": "2026-10-31",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": "r2",
+      "temaId": null,
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d7",
+      "texto": "[Ejemplo] Mapa de clientes por zona en Google Maps",
+      "dueno": "socio",
+      "fecha": "2026-10-27",
+      "hecho": true,
+      "hechoEl": "2026-10-26",
+      "rocaId": "r4",
+      "temaId": null,
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d8",
+      "texto": "[Ejemplo] Cotizar 2 proveedores de limón con precio fijo",
+      "dueno": "socio",
+      "fecha": "2026-11-04",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": "t2",
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d9",
+      "texto": "[Ejemplo] Hablar con chofer ruta norte sobre horario de salida",
+      "dueno": "socio",
+      "fecha": "2026-10-24",
+      "hecho": true,
+      "hechoEl": "2026-10-23",
+      "rocaId": null,
+      "temaId": "t5",
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "d10",
+      "texto": "[Ejemplo] Probar remisión automática con 3 clientes",
+      "dueno": "roberto",
+      "fecha": "2026-10-24",
+      "hecho": true,
+      "hechoEl": "2026-10-23",
+      "rocaId": "r5",
+      "temaId": null,
+      "creado": "2026-10-14"
+    }
+  ],
+  "temas": [
+    {
+      "id": "t1",
+      "texto": "[Ejemplo] Clientes con pagos atrasados de más de 30 días",
+      "dueno": "roberto",
+      "prioridad": 1,
+      "estado": "discutiendo",
+      "solucion": "",
+      "creado": "2026-10-14"
+    },
+    {
+      "id": "t2",
+      "texto": "[Ejemplo] Precio del limón muy volátil, se come el margen",
+      "dueno": "socio",
+      "prioridad": 2,
+      "estado": "identificado",
+      "solucion": "",
+      "creado": "2026-10-14"
+    },
+    {
+      "id": "t3",
+      "texto": "[Ejemplo] No cabe la fruta en la cámara fría los lunes",
+      "dueno": "socio",
+      "prioridad": 3,
+      "estado": "identificado",
+      "solucion": "",
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "t4",
+      "texto": "[Ejemplo] Oportunidad: vender fruta picada a cafeterías",
+      "dueno": "roberto",
+      "prioridad": null,
+      "estado": "identificado",
+      "solucion": "",
+      "creado": "2026-10-21"
+    },
+    {
+      "id": "t5",
+      "texto": "[Ejemplo] La ruta norte sale tarde",
+      "dueno": "socio",
+      "prioridad": null,
+      "estado": "resuelto",
+      "solucion": "[Ejemplo] La camioneta se carga la noche anterior y sale 6:30 a.m.",
+      "creado": "2026-10-14"
+    }
+  ],
+  "scorecard": [
+    {
+      "id": "s1",
+      "nombre": "[Ejemplo] Ventas de la semana",
+      "dueno": "roberto",
+      "operador": ">=",
+      "meta": 200000,
+      "unidad": "$",
+      "valores": {
+        "2026-08-03": 196200,
+        "2026-08-10": 187500,
+        "2026-08-17": 212500,
+        "2026-08-24": 183600,
+        "2026-08-31": 206800,
+        "2026-09-07": 198300,
+        "2026-09-14": 182900,
+        "2026-09-21": 205400,
+        "2026-09-28": 181900,
+        "2026-10-05": 201700,
+        "2026-10-12": 183500,
+        "2026-10-19": 184500
+      }
+    },
+    {
+      "id": "s2",
+      "nombre": "[Ejemplo] Clientes nuevos",
+      "dueno": "roberto",
+      "operador": ">=",
+      "meta": 3,
+      "unidad": "",
+      "valores": {
+        "2026-08-03": 3,
+        "2026-08-10": 4,
+        "2026-08-17": 1,
+        "2026-08-24": 2,
+        "2026-08-31": 4,
+        "2026-09-07": 5,
+        "2026-09-14": 3,
+        "2026-09-21": 3,
+        "2026-09-28": 5,
+        "2026-10-05": 1,
+        "2026-10-12": 4,
+        "2026-10-19": 2
+      }
+    },
+    {
+      "id": "s3",
+      "nombre": "[Ejemplo] Entregas a tiempo",
+      "dueno": "socio",
+      "operador": ">=",
+      "meta": 95,
+      "unidad": "%",
+      "valores": {
+        "2026-08-03": 92.9,
+        "2026-08-10": 92.7,
+        "2026-08-17": 93.9,
+        "2026-08-24": 96.9,
+        "2026-08-31": 93.1,
+        "2026-09-07": 95.5,
+        "2026-09-14": 95.8,
+        "2026-09-21": 94.2,
+        "2026-09-28": 95.3,
+        "2026-10-05": 92.4,
+        "2026-10-12": 92.4,
+        "2026-10-19": 93.2
+      }
+    },
+    {
+      "id": "s4",
+      "nombre": "[Ejemplo] Merma",
+      "dueno": "socio",
+      "operador": "<=",
+      "meta": 4,
+      "unidad": "%",
+      "valores": {
+        "2026-08-03": 4.7,
+        "2026-08-10": 4.1,
+        "2026-08-17": 3.9,
+        "2026-08-24": 4.5,
+        "2026-08-31": 4.2,
+        "2026-09-07": 3.8,
+        "2026-09-14": 5.0,
+        "2026-09-21": 4.8,
+        "2026-09-28": 3.7,
+        "2026-10-05": 4.5,
+        "2026-10-12": 4.4,
+        "2026-10-19": 5.2
+      }
+    },
+    {
+      "id": "s5",
+      "nombre": "[Ejemplo] Cartera vencida > 30 días",
+      "dueno": "roberto",
+      "operador": "<=",
+      "meta": 60000,
+      "unidad": "$",
+      "valores": {
+        "2026-08-03": 76900,
+        "2026-08-10": 63600,
+        "2026-08-17": 84400,
+        "2026-08-24": 58500,
+        "2026-08-31": 67500,
+        "2026-09-07": 77700,
+        "2026-09-14": 59600,
+        "2026-09-21": 69700,
+        "2026-09-28": 56200,
+        "2026-10-05": 75000,
+        "2026-10-12": 77900,
+        "2026-10-19": 72200
+      }
+    },
+    {
+      "id": "s6",
+      "nombre": "[Ejemplo] Pedidos entregados",
+      "dueno": "socio",
+      "operador": ">=",
+      "meta": 180,
+      "unidad": "",
+      "valores": {
+        "2026-08-03": 197,
+        "2026-08-10": 175,
+        "2026-08-17": 190,
+        "2026-08-24": 186,
+        "2026-08-31": 185,
+        "2026-09-07": 180,
+        "2026-09-14": 196,
+        "2026-09-21": 200,
+        "2026-09-28": 181,
+        "2026-10-05": 189,
+        "2026-10-12": 164,
+        "2026-10-19": 190
+      }
+    },
+    {
+      "id": "s7",
+      "nombre": "[Ejemplo] Ticket promedio",
+      "dueno": "roberto",
+      "operador": ">=",
+      "meta": 1100,
+      "unidad": "$",
+      "valores": {
+        "2026-08-03": 1200,
+        "2026-08-10": 1200,
+        "2026-08-17": 1200,
+        "2026-08-24": 1100,
+        "2026-08-31": 1100,
+        "2026-09-07": 1200,
+        "2026-09-14": 1000,
+        "2026-09-21": 1100,
+        "2026-09-28": 1000,
+        "2026-10-05": 1000,
+        "2026-10-12": 1000,
+        "2026-10-19": 1200
+      }
+    }
+  ],
+  "juntas": [
+    {
+      "fecha": "2026-10-21",
+      "calificaciones": {
+        "roberto": 8,
+        "socio": 9
+      },
+      "titulares": [
+        "[Ejemplo] Cliente: Café Aurora pidió agregar mango diario"
+      ],
+      "mensajes": [
+        "[Ejemplo] Avisar a choferes del nuevo horario de salida"
+      ]
+    }
+  ],
+  "responsabilidades": [
+    {
+      "asiento": "Visionario",
+      "persona": "roberto",
+      "roles": [
+        "[Ejemplo] Visión y metas",
+        "[Ejemplo] Relaciones clave",
+        "[Ejemplo] Nuevas oportunidades"
       ]
     },
-    "financieros": {
-      "nota": "Cifras mensuales en MXN",
-      "meses": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
-      "ingresosMeta": [700000, 720000, 750000, 780000, 800000, 820000, 850000, 870000, 880000, 900000, 950000, 980000],
-      "ingresosReal": [650000, 700000, 760000, 770000, 810000, 800000, 840000, 880000, 870000, 905000, null, null],
-      "utilidadMeta": [60000, 62000, 65000, 68000, 70000, 72000, 75000, 77000, 78000, 80000, 85000, 88000],
-      "utilidadReal": [50000, 58000, 66000, 64000, 71000, 69000, 74000, 79000, 76000, 81000, null, null]
-    },
-    "rocas": {
-      "trimestre": "T4 2026",
-      "fechaLimite": "2026-12-31",
-      "lista": [
-        { "roca": "[Ejemplo] Cerrar 15 clientes nuevos de restaurantes", "responsable": "Roberto", "progreso": 60, "estado": "en curso", "fecha": "2026-12-31" },
-        { "roca": "[Ejemplo] Implementar control de merma diario", "responsable": "Socio", "progreso": 40, "estado": "atrasada", "fecha": "2026-12-15" },
-        { "roca": "[Ejemplo] Negociar precio fijo con 2 proveedores de aguacate", "responsable": "Socio", "progreso": 100, "estado": "en curso", "fecha": "2026-11-30" },
-        { "roca": "[Ejemplo] Remisiones automáticas desde Odoo", "responsable": "Roberto", "progreso": 85, "estado": "en curso", "fecha": "2026-11-20" },
-        { "roca": "[Ejemplo] Definir rutas fijas por zona", "responsable": "Socio", "progreso": 20, "estado": "atrasada", "fecha": "2026-12-20" }
+    {
+      "asiento": "Integrador",
+      "persona": "socio",
+      "roles": [
+        "[Ejemplo] Dirige el Level 10",
+        "[Ejemplo] Rocas y To-Dos al día",
+        "[Ejemplo] Resuelve temas entre áreas"
       ]
     },
-    "temas": [
-      { "tema": "[Ejemplo] Clientes con pagos atrasados mayores a 30 días", "prioridad": "alta", "tipo": "problema", "resuelto": false },
-      { "tema": "[Ejemplo] Precio del limón muy volátil", "prioridad": "alta", "tipo": "obstáculo", "resuelto": false },
-      { "tema": "[Ejemplo] Oportunidad: vender fruta picada a cafeterías", "prioridad": "media", "tipo": "oportunidad", "resuelto": false },
-      { "tema": "[Ejemplo] Falta de espacio en bodega", "prioridad": "media", "tipo": "reto", "resuelto": false },
-      { "tema": "[Ejemplo] Idea: programa de lealtad para tienditas", "prioridad": "baja", "tipo": "idea", "resuelto": false },
-      { "tema": "[Ejemplo] Cambio de proveedor de cajas", "prioridad": "baja", "tipo": "problema", "resuelto": true }
-    ]
-  }
+    {
+      "asiento": "Ventas",
+      "persona": "roberto",
+      "roles": [
+        "[Ejemplo] Clientes nuevos",
+        "[Ejemplo] Precios",
+        "[Ejemplo] Cobranza"
+      ]
+    },
+    {
+      "asiento": "Operaciones",
+      "persona": "socio",
+      "roles": [
+        "[Ejemplo] Compras en central",
+        "[Ejemplo] Bodega y merma",
+        "[Ejemplo] Rutas y entregas"
+      ]
+    },
+    {
+      "asiento": "Finanzas",
+      "persona": "roberto",
+      "roles": [
+        "[Ejemplo] Flujo de efectivo",
+        "[Ejemplo] Facturación",
+        "[Ejemplo] Reportes"
+      ]
+    }
+  ]
 }

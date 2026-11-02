@@ -1,7 +1,7 @@
 {
   "ejemplo": false,
   "empresa": "FRÜTOS Chávez",
-  "actualizado": "2026-10-28",
+  "actualizado": "2026-11-02",
   "personas": [
     {
       "id": "roberto",
@@ -61,8 +61,8 @@
       "texto": "Cancelar pauta mayoreo.",
       "dueno": null,
       "fecha": "2026-11-04",
-      "hecho": false,
-      "hechoEl": null,
+      "hecho": true,
+      "hechoEl": "2026-11-02",
       "rocaId": null,
       "temaId": null,
       "creado": "2026-10-28"
@@ -83,8 +83,8 @@
       "texto": "Arreglar cel de Vallarta y conectarlo con Grok.",
       "dueno": null,
       "fecha": "2026-11-04",
-      "hecho": false,
-      "hechoEl": null,
+      "hecho": true,
+      "hechoEl": "2026-11-02",
       "rocaId": null,
       "temaId": null,
       "creado": "2026-10-28"
@@ -116,8 +116,8 @@
       "texto": "Meter promoción a mitad de la semana (banco de imágenes).",
       "dueno": null,
       "fecha": "2026-11-04",
-      "hecho": false,
-      "hechoEl": null,
+      "hecho": true,
+      "hechoEl": "2026-11-02",
       "rocaId": null,
       "temaId": null,
       "creado": "2026-10-28"

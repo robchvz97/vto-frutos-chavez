@@ -132,6 +132,17 @@
       "rocaId": null,
       "temaId": null,
       "creado": "2026-10-28"
+    },
+    {
+      "id": "d8",
+      "texto": "Vender $60,000 a la semana.",
+      "dueno": null,
+      "fecha": "2026-11-09",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-11-02"
     }
   ],
   "temas": [],

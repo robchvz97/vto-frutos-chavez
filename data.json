@@ -90,17 +90,6 @@
       "creado": "2026-10-28"
     },
     {
-      "id": "d4",
-      "texto": "$500 pesos de menudeo al mes (pulpa maracuyá y fresa).",
-      "dueno": null,
-      "fecha": "2026-11-04",
-      "hecho": false,
-      "hechoEl": null,
-      "rocaId": null,
-      "temaId": null,
-      "creado": "2026-10-28"
-    },
-    {
       "id": "d5",
       "texto": "Estudiar la pauta de la competencia: Hiberry y Berryhouse (biblioteca de anuncios de Facebook) + SEO bajo el nombre de la competencia.",
       "dueno": null,
@@ -136,6 +125,17 @@
     {
       "id": "d8",
       "texto": "Vender $60,000 a la semana.",
+      "dueno": null,
+      "fecha": "2026-11-09",
+      "hecho": false,
+      "hechoEl": null,
+      "rocaId": null,
+      "temaId": null,
+      "creado": "2026-11-02"
+    },
+    {
+      "id": "d9",
+      "texto": "Bolsas para menudeo. 2 reels al mes.",
       "dueno": null,
       "fecha": "2026-11-09",
       "hecho": false,

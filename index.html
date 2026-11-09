@@ -6,8 +6,8 @@
 <title>FRÜTOS Chávez · EOS</title>
 <meta name="description" content="Sistema de ejecución EOS (V/TO, Rocas, To-Dos, Temas, Scorecard, Level 10) de FRÜTOS Chávez">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%231f8a4c'/></svg>">
-<link rel="stylesheet" href="./styles.css?v=6">
-<script src="./app.js?v=6" defer></script>
+<link rel="stylesheet" href="./styles.css?v=7">
+<script src="./app.js?v=7" defer></script>
 </head>
 <body>
 <div id="banner-ejemplo" class="banner" hidden>Datos de ejemplo — pendientes de llenar</div>
@@ -37,22 +37,21 @@
     <h3>Nombres</h3>
     <div id="aj-personas"></div>
 
-    <h3>Publicar directo a GitHub (opcional)</h3>
-    <p class="tenue">Sin token, “Publicar” descarga <code>data.json</code> para que lo subas al repositorio. Con token, el botón guarda directo y tu socio lo ve en 1–2 minutos.</p>
+    <h3>Conectar GitHub (una sola vez)</h3>
+    <p class="tenue">Así tus cambios se guardan solos y tu socio los ve al instante. El token se queda <b>solo en este teléfono</b>, nunca en el repositorio.</p>
     <ol class="pasos">
-      <li>Entra a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Settings → Fine-grained tokens → Generate new token</a>.</li>
-      <li><b>Repository access:</b> “Only select repositories” → <code id="aj-repo-nombre">vto-frutos-chavez</code>.</li>
-      <li><b>Permissions → Repository → Contents:</b> “Read and write”. Nada más.</li>
-      <li>Copia el token y pégalo aquí. Se guarda <b>sólo en este navegador</b>, nunca en el repositorio.</li>
+      <li>Toca aquí para crear el token:<br>
+        <a class="btn pri" style="display:inline-block;margin:8px 0;text-decoration:none" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crear token en GitHub →</a>
+      </li>
+      <li><b>Token name:</b> FRUTOS tablero</li>
+      <li><b>Expiration:</b> 90 days (o más)</li>
+      <li><b>Repository access:</b> Only select repositories → <code id="aj-repo-nombre">robchvz97/vto-frutos-chavez</code></li>
+      <li><b>Permissions → Repository permissions → Contents:</b> Read and write. Nada más.</li>
+      <li>Generate token → cópialo y pégalo abajo.</li>
     </ol>
-    <label class="campo">Token<input type="password" id="aj-token" autocomplete="off" placeholder="github_pat_…"></label>
+    <label class="campo">Pega el token aquí<input type="password" id="aj-token" autocomplete="off" placeholder="github_pat_…"></label>
     <div class="fila">
-      <label class="campo">Usuario/organización<input id="aj-owner"></label>
-      <label class="campo">Repositorio<input id="aj-repo"></label>
-      <label class="campo">Rama<input id="aj-rama"></label>
-    </div>
-    <div class="fila">
-      <button type="button" class="btn" id="aj-guardar">Guardar</button>
+      <button type="button" class="btn pri" id="aj-guardar">Guardar</button>
       <button type="button" class="btn" id="aj-probar">Probar conexión</button>
       <button type="button" class="btn suave" id="aj-borrar">Borrar token</button>
     </div>
@@ -61,7 +60,7 @@
     <h3>Datos locales</h3>
     <div class="fila">
       <button type="button" class="btn" id="aj-descargar">Descargar data.json</button>
-      <button type="button" class="btn suave" id="aj-descartar">Descartar cambios sin publicar</button>
+      <button type="button" class="btn suave" id="aj-descartar">Descartar cambios locales</button>
     </div>
   </form>
 </dialog>

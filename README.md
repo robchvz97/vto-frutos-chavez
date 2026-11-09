@@ -19,13 +19,12 @@ Scorecard: 5–15 medibles semanales, 13 semanas, rojo/verde
 | **Level 10** | La junta semanal con la agenda oficial y relojes: Segue 5′, Scorecard 5′, Rocas 5′, Titulares 5′, To-Dos 5′, IDS 60′, Conclusión 5′ (calificación 1–10). |
 | **V/TO** | La visión en una página y la cascada Meta → Rocas → To-Dos con avance. |
 
-## Cómo se guardan los cambios
+## Cómo se edita y se guarda
+- **Todo se edita en la página**: toca el texto de un To-Do, Roca, Tema, medible, meta o cualquier campo del V/TO. Cambia fechas, responsable y ligas. Borra con ✕.
 - **La fuente de verdad es `data.json`** en este repositorio.
-- En el navegador puedes palomear To-Dos, agregar To-Dos y Temas, cambiar estados, capturar el Scorecard y calificar la junta. Se guardan en ese navegador y aparece la barra **“Cambios sin publicar”**.
-- **Publicar**:
-  - *Con token* (⚙︎ Ajustes): guarda `data.json` directo en GitHub; el otro socio lo ve en 1–2 min. Cada quien necesita su propio token *fine-grained* con acceso sólo a este repositorio y permiso **Contents: Read and write** (el socio debe ser colaborador del repo). El token vive sólo en el navegador (localStorage); **nunca** se sube al repositorio.
-  - *Sin token*: descarga `data.json` para subirlo al repositorio (o mandárselo al asistente).
-- Si alguien publicó mientras tú tenías cambios, el tablero avisa y te deja recuperar o descartar tus cambios.
+- **Con token** (⚙︎ Ajustes): cada cambio se publica solo a GitHub (~2 s). El indicador muestra Guardando… / Guardado ✓. Con token, el tablero lee `data.json` fresco desde la API de GitHub (no la copia cacheada de Pages).
+- **Sin token**: los cambios quedan solo en ese teléfono; aparece “Conecta GitHub para publicar”.
+- El token es *fine-grained*, solo este repo, permiso **Contents: Read and write**. Vive sólo en el navegador; **nunca** en el repositorio. El socio necesita ser colaborador y pegar su propio token.
 
 ## Junta Level 10 semanal (resumen)
 1. Antes: cada quien palomea sus To-Dos y captura sus números del Scorecard de la semana pasada.

@@ -179,3 +179,19 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .ir:hover{text-decoration:underline}
 .liga-sel{border:0;background:transparent;color:var(--tenue);font-size:.78rem;padding:0 2px;min-height:0;width:auto;max-width:150px;text-decoration:underline;cursor:pointer;-webkit-appearance:none;appearance:none}
 .destacado{outline:3px solid var(--acento);outline-offset:3px;border-radius:12px}
+
+/* edición en línea */
+.edit,.edit-fecha,.edit-sel{font:inherit;color:var(--texto);background:transparent;border:1px solid transparent;border-radius:8px;padding:4px 6px;width:100%;min-height:0}
+.edit:focus,.edit-fecha:focus,.edit-sel:focus{outline:none;border-color:var(--acento);background:var(--fondo2)}
+.edit.tit{font-weight:700;font-size:1.02rem;padding:2px 4px}
+.edit.corto{width:5.5rem;display:inline-block}
+textarea.edit{resize:vertical;min-height:52px;line-height:1.35}
+.fila-edit{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.edit-sel,.edit-fecha{width:auto;max-width:100%;font-size:.85rem;color:var(--tenue)}
+.edit-fecha{color:var(--texto)}
+.lista-edit{list-style:none;padding:0;margin:0 0 8px}
+.lista-edit li{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.valor-edit{border:1px solid var(--linea);border-radius:12px;padding:10px;margin-bottom:8px}
+.label{font-size:.75rem;font-weight:700;color:var(--tenue);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
+.asiento .edit{margin-bottom:4px}
+.cambios{font-weight:600}

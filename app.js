@@ -25,21 +25,32 @@ const textoAb64 = (t) => { const by = new TextEncoder().encode(t); let s = ""; f
 function aviso(msg, ms = 2800) { const a = $("#aviso"); a.textContent = msg; a.classList.add("ver"); clearTimeout(a._t); a._t = setTimeout(() => a.classList.remove("ver"), ms); }
 
 /* ===== estado ===== */
-const ESQUEMA = "4";
+const ESQUEMA = "5";
 const LS = { esquema: "eos-esquema", local: "eos-local", persona: "eos-persona", tema: "eos-tema", token: "eos-gh-token", repo: "eos-gh-repo", l10: "eos-l10" };
 let pub = null;      // data.json publicado
 let base = "";       // hash del publicado sobre el que se hicieron los cambios
+let shaRemoto = null; // sha de data.json en GitHub
 let D = null;        // datos de trabajo
 let pendiente = null; // cambios locales basados en una versión anterior
 let vista = "todos";
+let pubEstado = "idle"; // idle | dirty | saving | ok | err
+let pubTimer = null, pubMsg = "";
 
+const tokenHay = () => !!localStorage.getItem(LS.token);
 const canon = (o) => JSON.stringify(o);
 const sucio = () => pub && canon(D) !== canon(pub);
+function setPubEstado(e, msg) { pubEstado = e; if (msg !== undefined) pubMsg = msg; pintarBarra(); }
 function guardar() {
   localStorage.setItem(LS.local, JSON.stringify({ base, data: D, sucio: !!sucio() }));
+  if (tokenHay()) { setPubEstado("dirty"); clearTimeout(pubTimer); pubTimer = setTimeout(() => publicarAuto(), 2000); }
+  else setPubEstado("dirty");
   pintarBarra();
 }
-function cambiar(fn, msg) { fn(); guardar(); render(); if (msg) aviso(msg); }
+function cambiar(fn, msg, { silencioso = false } = {}) {
+  fn();
+  if (!silencioso) { guardar(); render(); if (msg) aviso(msg); }
+  else { guardar(); if (msg) aviso(msg); }
+}
 
 /* ===== modelo ===== */
 const personas = () => D.personas || [];
@@ -78,6 +89,72 @@ function semanas13() { const l = lunesDe(hoyISO()); return Array.from({ length: 
 function colorMedible(m, v) { if (v == null || v === "") return ""; const ok = m.operador === "<=" ? Number(v) <= Number(m.meta) : Number(v) >= Number(m.meta); return ok ? "verde" : "rojo"; }
 function progresoRoca(r) { if (r.estado === "hecha") return 100; const t = todosDe("rocaId", r.id); return t.length ? Math.round((t.filter((x) => x.hecho).length / t.length) * 90) : 0; }
 
+/* ===== edición en línea ===== */
+function edCampo(tipo, id, campo, valor, { multilinea = false, placeholder = "tocar para editar", clase = "edit" } = {}) {
+  const v = valor == null || valor === "" ? "" : String(valor);
+  if (multilinea) return `<textarea class="${clase}" data-edit="${tipo}" data-id="${id}" data-campo="${campo}" placeholder="${esc(placeholder)}" rows="2">${esc(v)}</textarea>`;
+  return `<input type="text" class="${clase}" data-edit="${tipo}" data-id="${id}" data-campo="${campo}" placeholder="${esc(placeholder)}" value="${esc(v)}">`;
+}
+function edFecha(tipo, id, campo, valor) {
+  return `<input type="date" class="edit-fecha" data-edit="${tipo}" data-id="${id}" data-campo="${campo}" value="${esc(valor || "")}" aria-label="Fecha">`;
+}
+function edDueno(tipo, id, campo, valor) {
+  return `<select class="edit-sel" data-edit="${tipo}" data-id="${id}" data-campo="${campo}" aria-label="Responsable"><option value="">Sin asignar</option>${personas().map((p) => `<option value="${p.id}" ${p.id === valor ? "selected" : ""}>${esc(p.nombre)}</option>`).join("")}</select>`;
+}
+function resolverEdit(tipo, id) {
+  if (tipo === "todo") return D.todos.find((x) => x.id === id);
+  if (tipo === "roca") return D.rocas.find((x) => x.id === id);
+  if (tipo === "tema") return D.temas.find((x) => x.id === id);
+  if (tipo === "meta") return D.metas.find((x) => x.id === id);
+  if (tipo === "medible") return D.scorecard.find((x) => x.id === id);
+  if (tipo === "persona") return D.personas.find((x) => x.id === id);
+  if (tipo === "asiento") return D.responsabilidades.find((x) => x.id === id) || D.responsabilidades[+id];
+  if (tipo === "vto") return D.vto;
+  if (tipo === "valor") return D.vto.valores[+id];
+  if (tipo === "unico") return { i: +id };
+  if (tipo === "empresa") return D;
+  return null;
+}
+function aplicarEdit(el) {
+  const { edit: tipo, id, campo } = el.dataset;
+  if (!tipo || !campo) return;
+  let val = el.type === "checkbox" ? el.checked : el.value;
+  if (el.tagName === "TEXTAREA") val = el.value;
+  if (el.dataset._last === String(val) && el.dataset._last !== undefined) return;
+  el.dataset._last = String(val);
+  if (campo === "meta" && tipo === "medible") { const n = Number(String(val).replace(/[$,%\s]/g, "")); if (isNaN(n)) { aviso("La meta debe ser un número"); return; } val = n; }
+  if (campo === "ingresos" || campo === "utilidad") { const n = String(val).replace(/[$,\s]/g, ""); val = n === "" ? null : Number(n); if (val != null && isNaN(val)) { aviso("Número inválido"); return; } }
+  if (campo === "dueno" && val === "") val = null;
+  cambiar(() => {
+    if (tipo === "vto") {
+      const path = campo.split(".");
+      let o = D.vto; for (let i = 0; i < path.length - 1; i++) { o[path[i]] = o[path[i]] || {}; o = o[path[i]]; }
+      o[path[path.length - 1]] = val;
+    } else if (tipo === "unico") {
+      D.vto.marketing = D.vto.marketing || {}; const u = D.vto.marketing.unicos = D.vto.marketing.unicos || [];
+      while (u.length <= +id) u.push("");
+      u[+id] = val;
+    } else if (tipo === "valor") {
+      const v = D.vto.valores[+id]; if (v) v[campo] = val;
+    } else if (tipo === "lista") {
+      const parts = campo.split("."); let o = D.vto;
+      for (let i = 0; i < parts.length - 1; i++) { if (o[parts[i]] == null) o[parts[i]] = (i === parts.length - 2 ? [] : {}); o = o[parts[i]]; }
+      o[+parts[parts.length - 1]] = val;
+    } else if (tipo === "empresa") {
+      D[campo] = val;
+    } else if (tipo === "asiento") {
+      if (!D.responsabilidades.length) {
+        D.responsabilidades = ["Visionario", "Integrador", "Ventas", "Operaciones", "Finanzas"].map((a, i) => ({ id: "a" + i, asiento: a, persona: null, roles: [] }));
+      }
+      const a = D.responsabilidades.find((x) => x.id === id) || D.responsabilidades[+id];
+      if (a) { if (campo === "roles") a.roles = String(val).split("\n").map((x) => x.trim()).filter(Boolean); else a[campo] = val || null; }
+    } else {
+      const o = resolverEdit(tipo, id); if (o) o[campo] = val;
+    }
+  });
+}
+
+
 /* ===== piezas de UI ===== */
 const RUTA = { r: "rocas", t: "temas", m: "vto", s: "l10" };
 const ir = (tipo, id, texto) => `<a class="ir" href="#/${RUTA[tipo]}/${id}">${esc(texto)}</a>`;
@@ -95,11 +172,18 @@ function ligaTexto(t) {
 }
 function itemTodo(t, opts = {}) {
   const hoy = hoyISO(), venc = !t.hecho && !!t.fecha && t.fecha < hoy;
-  const fecha = t.hecho ? `Hecho ${fCorta(t.hechoEl)}` : venc ? `<span class="venc">Retrasado ${fCorta(t.fecha)} (${diasEntre(t.fecha, hoy)} d)</span>` : `Para ${fCorta(t.fecha)}`;
-  return `<li class="item ${t.hecho ? "hecho" : ""}">
+  const estado = t.hecho ? `Hecho ${fCorta(t.hechoEl)}` : venc ? `<span class="venc">Retrasado (${diasEntre(t.fecha, hoy)} d)</span>` : "Para";
+  return `<li class="item ${t.hecho ? "hecho" : ""}" id="it-${t.id}">
     <input type="checkbox" class="check" data-act="toggle-todo" data-id="${t.id}" ${t.hecho ? "checked" : ""} aria-label="Marcar como hecho">
-    <div class="cuerpo"><div class="tit">${esc(t.texto)}</div>
-      <div class="sub">${opts.dueno && t.dueno ? esc(nombre(t.dueno)) + " · " : ""}${fecha}${opts.sinLiga ? "" : " · " + ligaTexto(t)}</div></div>
+    <div class="cuerpo">
+      ${edCampo("todo", t.id, "texto", t.texto, { placeholder: "Texto del To-Do", clase: "edit tit" })}
+      <div class="sub fila-edit">
+        ${edDueno("todo", t.id, "dueno", t.dueno)}
+        <span>${estado}</span>
+        ${edFecha("todo", t.id, "fecha", t.fecha)}
+        ${opts.sinLiga ? "" : ligaTexto(t)}
+      </div>
+    </div>
     <button class="x" data-act="borrar-todo" data-id="${t.id}" title="Borrar" aria-label="Borrar">✕</button></li>`;
 }
 function selPersonas(name, sel) { return `<select name="${name}" aria-label="Responsable"><option value="">Sin asignar</option>${personas().map((p) => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${esc(p.nombre)}</option>`).join("")}</select>`; }
@@ -144,8 +228,13 @@ function temaDeMedible(m) { return D.temas.find((t) => t.medibleId === m.id && t
 function tarjetaRoca(r, conDueno) {
   const m = meta(r.metaId), ts = todosDe("rocaId", r.id), abiertos = ts.filter((t) => !t.hecho), hechos = ts.filter((t) => t.hecho);
   return `<div class="roca" id="it-${r.id}">
-    <div class="cab"><div><div class="tit">${esc(r.texto)}</div>
-      <div class="meta">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}${m ? ir("m", m.id, "Meta: " + m.texto) : "<span class='rojo'>sin meta</span>"} ${selMeta(r)}${r.fecha ? " · Fecha " + fCorta(r.fecha) : ""}</div>
+    <div class="cab"><div>
+      ${edCampo("roca", r.id, "texto", r.texto, { placeholder: "Texto de la Roca", clase: "edit tit" })}
+      <div class="meta fila-edit">
+        ${edDueno("roca", r.id, "dueno", r.dueno)}
+        ${m ? ir("m", m.id, "Meta: " + m.texto) : "<span class='rojo'>sin meta</span>"} ${selMeta(r)}
+        ${edFecha("roca", r.id, "fecha", r.fecha)}
+      </div>
       ${temasDeRoca(r)}</div><button class="x" data-act="borrar-roca" data-id="${r.id}" title="Borrar Roca" aria-label="Borrar Roca">✕</button></div>
     ${seg("estado-roca", r.id, ESTADOS_ROCA, r.estado)}
     <div class="barra"><i style="width:${progresoRoca(r)}%"></i></div>
@@ -178,9 +267,10 @@ function itemTema(t) {
   const ms = t.medibleId && D.scorecard.find((m) => m.id === t.medibleId);
   const origen = [t.rocaId && roca(t.rocaId) ? ir("r", t.rocaId, "Roca: " + roca(t.rocaId).texto) : "", ms ? ir("s", ms.id, "Medible: " + ms.nombre) : ""].filter(Boolean).join(" · ");
   return `<li class="item" id="it-${t.id}"><div class="prio">${t.prioridad || "·"}</div><div class="cuerpo">
-    <div class="tit">${esc(t.texto)}</div>${origen ? `<div class="sub">${origen}</div>` : ""}
-    <div class="sub">${t.dueno ? "Lo trajo " + esc(nombre(t.dueno)) + " · " : ""}desde ${fCorta(t.creado)}</div>
-    ${t.solucion ? `<div class="sub"><b>Solución:</b> ${esc(t.solucion)}</div>` : ""}
+    ${edCampo("tema", t.id, "texto", t.texto, { placeholder: "Texto del tema", clase: "edit tit" })}
+    ${origen ? `<div class="sub">${origen}</div>` : ""}
+    <div class="sub fila-edit">${edDueno("tema", t.id, "dueno", t.dueno)}<span class="tenue">desde ${fCorta(t.creado)}</span></div>
+    ${t.solucion ? `<div class="sub"><b>Solución:</b> ${edCampo("tema", t.id, "solucion", t.solucion, { multilinea: true, placeholder: "Solución", clase: "edit" })}</div>` : ""}
     ${ts.length ? `<ul class="lista" style="border-top:0;margin-top:4px">${ts.map((x) => itemTodo(x, { sinLiga: true, dueno: true })).join("")}</ul>` : ""}
     <div class="tema-acc">${seg("estado-tema", t.id, ESTADOS_TEMA, t.estado)}
       <select data-act="prio-tema" data-id="${t.id}" aria-label="Prioridad"><option value="">Sin prioridad</option>${[1, 2, 3].map((n) => `<option value="${n}" ${t.prioridad === n ? "selected" : ""}>Prioridad ${n}</option>`).join("")}</select>
@@ -234,7 +324,7 @@ function tablaScorecard() {
   const ws = semanas13(), revisar = ws[11];
   if (!D.scorecard.length) return `<p class="vacio">Aún no hay medibles. Agreguen de 5 a 15 números semanales, cada uno con dueño y meta.</p>${formMedible()}`;
   return `<div class="tabla-wrap"><table class="sc"><thead><tr><th class="nom">Medible</th><th>Dueño</th><th>Meta</th>${ws.map((w) => `<th>${fCorta(w)}</th>`).join("")}</tr></thead><tbody>
-    ${D.scorecard.map((m) => { const tm = temaDeMedible(m); return `<tr id="it-${m.id}"><td class="nom">${esc(m.nombre)}${tm ? ` · ${ir("t", tm.id, "Tema abierto")}` : colorMedible(m, m.valores[revisar]) === "rojo" ? ` <button class="btn mini" data-act="bajar" data-medible="${m.id}" data-texto="${esc("Medible fuera: " + m.nombre)}">→ Tema</button>` : ""}</td><td>${m.dueno ? esc(nombre(m.dueno)) : "—"}</td><td>${m.operador === "<=" ? "≤" : "≥"} ${num(m.meta, m.unidad)}</td>
+    ${D.scorecard.map((m) => { const tm = temaDeMedible(m); return `<tr id="it-${m.id}"><td class="nom">${edCampo("medible", m.id, "nombre", m.nombre, { placeholder: "Medible", clase: "edit" })}${tm ? ` · ${ir("t", tm.id, "Tema abierto")}` : colorMedible(m, m.valores[revisar]) === "rojo" ? ` <button class="btn mini" data-act="bajar" data-medible="${m.id}" data-texto="${esc("Medible fuera: " + m.nombre)}">→ Tema</button>` : ""} <button class="x" data-act="borrar-medible" data-id="${m.id}" title="Borrar medible" aria-label="Borrar">✕</button></td><td>${edDueno("medible", m.id, "dueno", m.dueno)}</td><td><select class="edit-sel" data-edit="medible" data-id="${m.id}" data-campo="operador"><option value=">=" ${m.operador===">="?"selected":""}>≥</option><option value="<=" ${m.operador==="<="?"selected":""}>≤</option></select> ${edCampo("medible", m.id, "meta", m.meta, { placeholder: "Meta", clase: "edit corto" })}</td>
       ${ws.map((w, i) => { const v = m.valores[w], c = colorMedible(m, v); return `<td class="${c ? "v-" + c : ""} ${i === 11 ? "actual" : ""}">${i >= 11 ? `<input inputmode="decimal" data-act="valor" data-id="${m.id}" data-sem="${w}" value="${v ?? ""}" aria-label="${esc(m.nombre)} semana ${w}">` : num(v, m.unidad)}</td>`; }).join("")}</tr>`; }).join("")}
   </tbody></table></div><p class="tenue chico">Semana a revisar: ${fCorta(revisar)} (recuadro). Verde = en meta, rojo = fuera. Últimas 13 semanas.</p>${formMedible()}`;
 }
@@ -269,7 +359,7 @@ function contenidoSegmento(id) {
         <ul class="lista">${(j?.mensajes || []).map((t, i) => `<li class="item"><div class="cuerpo">${esc(t)}</div><button class="x" data-act="borrar-mensaje" data-i="${i}" aria-label="Borrar">✕</button></li>`).join("")}</ul>
         <h3>Calificación de la junta (1–10)</h3>${personas().map((p) => `<div style="margin:8px 0"><div class="chico tenue" style="font-weight:700">${esc(p.nombre)}</div><div class="calif">${Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `<button data-act="calif" data-id="${p.id}" data-val="${n}" class="${j?.calificaciones?.[p.id] === n ? "on" : ""}">${n}</button>`).join("")}</div></div>`).join("")}
         ${(() => { const vs = Object.values(j?.calificaciones || {}); if (!vs.length) return ""; const p = vs.reduce((a, b) => a + b, 0) / vs.length; return `<p>Promedio: <b class="${p >= 8 ? "verde" : "rojo"}">${p.toFixed(1)}</b>${p < 8 ? " — platiquen qué haría la próxima mejor." : ""}</p>`; })()}
-        <p class="tenue chico">Al terminar, presiona <b>Publicar</b> arriba para que todo quede guardado en data.json.</p>`;
+        <p class="tenue chico">Si tienes GitHub conectado, los cambios se guardan solos.</p>`;
     }
   }
   return "";
@@ -297,36 +387,61 @@ function pausarSeg() { if (L.corriendo && L.inicioSeg) { L.acum[L.seg] += (Date.
 /* ----- V/TO ----- */
 function vVTO() {
   const v = D.vto || {}, mk = v.marketing || {}, i3 = v.imagen3 || {}, p1 = v.plan1 || {};
-  const PEND = '<p class="tenue">Pendiente de definir.</p>';
-  const txt = (x) => x ? esc(x) : '<span class="tenue">pendiente</span>';
-  const tf = (f) => f ? " · " + fLarga(f) : "";
-  const lista = (xs) => (xs || []).length ? `<ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : '<p class="tenue">Pendiente.</p>';
+  const edLista = (ruta, xs, ph) => {
+    const arr = xs || [];
+    return `<ul class="lista-edit">${arr.map((x, i) => `<li>${edCampo("lista", String(i), ruta + "." + i, x, { placeholder: ph, clase: "edit" })} <button class="x" data-act="borrar-lista" data-ruta="${ruta}" data-i="${i}" aria-label="Borrar">✕</button></li>`).join("")}</ul>
+      <button class="btn mini" data-act="add-lista" data-ruta="${ruta}">+ Agregar</button>`;
+  };
   const cascada = D.metas.map((m) => {
     const rs = D.rocas.filter((r) => r.metaId === m.id), ts = D.todos.filter((t) => rs.some((r) => r.id === t.rocaId));
     const pr = rs.length ? Math.round(rs.reduce((a, r) => a + progresoRoca(r), 0) / rs.length) : 0;
-    return `<div class="meta-c" id="it-${m.id}"><div class="fila-entre"><b>${esc(m.texto)}</b><span class="tenue chico">${m.dueno ? esc(nombre(m.dueno)) : ""} <button class="x" data-act="borrar-meta" data-id="${m.id}" title="Borrar meta" aria-label="Borrar meta">✕</button></span></div>
+    return `<div class="meta-c" id="it-${m.id}"><div class="fila-entre">${edCampo("meta", m.id, "texto", m.texto, { placeholder: "Meta del año", clase: "edit tit" })}<span class="tenue chico">${edDueno("meta", m.id, "dueno", m.dueno)} <button class="x" data-act="borrar-meta" data-id="${m.id}" title="Borrar meta" aria-label="Borrar meta">✕</button></span></div>
       <div class="barra"><i style="width:${pr}%"></i></div><div class="tenue chico">${pr}% · Rocas ${rs.filter((r) => r.estado === "hecha").length}/${rs.length} hechas · To-Dos ${ts.filter((t) => t.hecho).length}/${ts.length}</div>
       <ul>${rs.map((r) => { const t = todosDe("rocaId", r.id); return `<li><span class="punto p-${r.estado}"></span>${ir("r", r.id, r.texto)}<span class="tenue chico">${r.dueno ? esc(nombre(r.dueno)) + " · " : ""}${t.filter((x) => x.hecho).length}/${t.length} To-Dos</span></li>`; }).join("") || '<li class="tenue">Sin Rocas ligadas este trimestre</li>'}</ul></div>`;
   }).join("");
   const sinMeta = D.rocas.filter((r) => !meta(r.metaId));
-  return `<h1>Visión / Tracción</h1><p class="tenue">Meta a 10 años → Imagen a 3 años → Plan a 1 año → Rocas (90 días) → To-Dos (7 días).</p>
+  const vals = v.valores || [];
+  const unicos = mk.unicos || [];
+  if (!D.responsabilidades.length) {
+    // solo en pantalla; se persisten al primer edit de asiento
+  }
+  const asientosUI = D.responsabilidades.length ? D.responsabilidades : ["Visionario", "Integrador", "Ventas", "Operaciones", "Finanzas"].map((a, i) => ({ id: "a" + i, asiento: a, persona: null, roles: [] }));
+  return `<h1>Visión / Tracción</h1><p class="tenue">Meta a 10 años → Imagen a 3 años → Plan a 1 año → Rocas (90 días) → To-Dos (7 días). Toca cualquier texto para editarlo.</p>
   <div class="vto">
     <div>
-      <section><h3>Valores centrales</h3>${(v.valores || []).map((x) => `<p><b>${esc(x.nombre)}</b>${x.descripcion ? ` — <span class="tenue">${esc(x.descripcion)}</span>` : ""}</p>`).join("") || PEND}</section>
-      <section><h3>Enfoque central</h3><p><b>Propósito / causa / pasión:</b> ${txt(v.enfoque?.proposito)}</p><p><b>Nicho:</b> ${txt(v.enfoque?.nicho)}</p></section>
-      <section><h3>Meta a 10 años${tf(v.meta10?.fecha)}</h3>${v.meta10?.texto ? `<p style="font-size:1.1rem;font-weight:700">${esc(v.meta10.texto)}</p>` : PEND}</section>
-      <section><h3>Estrategia de marketing</h3><p><b>Mercado objetivo (“La Lista”):</b> ${txt(mk.mercado)}</p><p><b>3 únicos:</b></p>${(mk.unicos || []).length ? `<ol>${mk.unicos.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : '<p class="tenue">Pendiente.</p>'}<p><b>Proceso probado:</b> ${txt(mk.proceso)}</p><p><b>Garantía:</b> ${txt(mk.garantia)}</p></section>
-      <section><h3>Imagen a 3 años${tf(i3.fecha)}</h3><div class="cifras"><div><span>Ingresos</span><b>${dinero(i3.ingresos)}</b></div><div><span>Utilidad</span><b>${dinero(i3.utilidad)}</b></div></div>
-        <p><b>Medibles</b></p>${lista(i3.medibles)}<p><b>¿Cómo se ve?</b></p>${lista(i3.comoSeVe)}</section>
+      <section><h3>Valores centrales</h3>
+        ${vals.map((x, i) => `<div class="valor-edit"><div class="fila-entre">${edCampo("valor", String(i), "nombre", x.nombre, { placeholder: "Nombre del valor", clase: "edit tit" })}<button class="x" data-act="borrar-valor" data-i="${i}" aria-label="Borrar">✕</button></div>${edCampo("valor", String(i), "descripcion", x.descripcion, { multilinea: true, placeholder: "Descripción", clase: "edit" })}</div>`).join("") || '<p class="tenue">Aún no hay valores.</p>'}
+        <button class="btn mini" data-act="add-valor">+ Valor</button></section>
+      <section><h3>Enfoque central</h3>
+        <p class="label">Propósito / causa / pasión</p>${edCampo("vto", "x", "enfoque.proposito", v.enfoque?.proposito, { multilinea: true, placeholder: "¿Por qué existe la empresa?" })}
+        <p class="label">Nicho</p>${edCampo("vto", "x", "enfoque.nicho", v.enfoque?.nicho, { multilinea: true, placeholder: "¿En qué somos mejores?" })}</section>
+      <section><h3>Meta a 10 años</h3>
+        ${edFecha("vto", "x", "meta10.fecha", v.meta10?.fecha)}
+        ${edCampo("vto", "x", "meta10.texto", v.meta10?.texto, { multilinea: true, placeholder: "La meta grande a 10 años", clase: "edit tit" })}</section>
+      <section><h3>Estrategia de marketing</h3>
+        <p class="label">Mercado objetivo (“La Lista”)</p>${edCampo("vto", "x", "marketing.mercado", mk.mercado, { multilinea: true, placeholder: "Clientes ideales" })}
+        <p class="label">3 únicos</p>
+        ${[0,1,2].map((i) => edCampo("unico", String(i), "x", unicos[i] || "", { placeholder: "Único #" + (i+1) })).join("")}
+        <p class="label">Proceso probado</p>${edCampo("vto", "x", "marketing.proceso", mk.proceso, { multilinea: true, placeholder: "Pasos del proceso" })}
+        <p class="label">Garantía</p>${edCampo("vto", "x", "marketing.garantia", mk.garantia, { multilinea: true, placeholder: "Garantía" })}</section>
+      <section><h3>Imagen a 3 años</h3>
+        ${edFecha("vto", "x", "imagen3.fecha", i3.fecha)}
+        <div class="cifras"><div><span>Ingresos</span>${edCampo("vto", "x", "imagen3.ingresos", i3.ingresos, { placeholder: "MXN" })}</div>
+        <div><span>Utilidad</span>${edCampo("vto", "x", "imagen3.utilidad", i3.utilidad, { placeholder: "MXN" })}</div></div>
+        <p class="label">Medibles</p>${edLista("imagen3.medibles", i3.medibles, "Medible")}
+        <p class="label">¿Cómo se ve?</p>${edLista("imagen3.comoSeVe", i3.comoSeVe, "Detalle")}</section>
     </div>
     <div>
-      <section><h3>Plan a 1 año${tf(p1.fecha)}</h3><div class="cifras"><div><span>Ingresos</span><b>${dinero(p1.ingresos)}</b></div><div><span>Utilidad</span><b>${dinero(p1.utilidad)}</b></div></div>
-        <p><b>Medibles</b></p>${lista(p1.medibles)}</section>
+      <section><h3>Plan a 1 año</h3>
+        ${edFecha("vto", "x", "plan1.fecha", p1.fecha)}
+        <div class="cifras"><div><span>Ingresos</span>${edCampo("vto", "x", "plan1.ingresos", p1.ingresos, { placeholder: "MXN" })}</div>
+        <div><span>Utilidad</span>${edCampo("vto", "x", "plan1.utilidad", p1.utilidad, { placeholder: "MXN" })}</div></div>
+        <p class="label">Medibles</p>${edLista("plan1.medibles", p1.medibles, "Medible")}</section>
       <section><h3>Metas del año → Rocas ${esc(D.trimestre?.nombre || "")} → To-Dos</h3><div class="cascada">${cascada || '<p class="tenue">Aún no hay metas del plan anual (1 a 7). Agrega la primera:</p>'}</div>
         <form class="agregar" data-form="meta"><div class="principal"><input name="texto" required placeholder="Nueva meta del año…" aria-label="Nueva meta del año"><button class="btn pri">Agregar</button></div><div class="opciones">${selPersonas("dueno", "")}</div></form>
         ${sinMeta.length ? `<p class="rojo chico">Rocas sin meta anual: ${sinMeta.map((r) => esc(r.texto)).join(", ")}</p>` : ""}</section>
       <section><h3>Temas abiertos</h3><p>${D.temas.filter((t) => t.estado !== "resuelto").length} temas · <a href="#/temas">ver lista</a></p></section>
-      <section><h3>Gráfica de responsabilidades</h3><div class="asientos">${(D.responsabilidades || []).map((a) => `<div class="asiento"><b>${esc(a.asiento)}</b><span class="tenue chico">${esc(nombre(a.persona))}</span><ul>${(a.roles || []).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>`).join("") || '<p class="tenue">Pendiente de definir: quién ocupa cada asiento (Visionario, Integrador, Ventas, Operaciones, Finanzas).</p>'}</div></section>
+      <section><h3>Gráfica de responsabilidades</h3><div class="asientos">${asientosUI.map((a, i) => `<div class="asiento">${edCampo("asiento", a.id || String(i), "asiento", a.asiento, { placeholder: "Asiento", clase: "edit tit" })}${edDueno("asiento", a.id || String(i), "persona", a.persona)}${edCampo("asiento", a.id || String(i), "roles", (a.roles || []).join("\n"), { multilinea: true, placeholder: "Un rol por línea" })}</div>`).join("")}</div></section>
     </div>
   </div>`;
 }
@@ -345,18 +460,37 @@ function render() {
 }
 function pintarBarra() {
   const b = $("#barra-cambios");
-  if (pendiente) { b.hidden = false; b.innerHTML = `Hay una versión publicada más nueva. Tienes cambios sin publicar de antes. <button class="btn" data-act="recuperar">Recuperar mis cambios</button><button class="btn suave" data-act="descartar-pendiente">Descartarlos</button>`; return; }
-  if (sucio()) { b.hidden = false; b.innerHTML = `● Cambios sin publicar <button class="btn" data-act="publicar">${localStorage.getItem(LS.token) ? "Publicar" : "Publicar (descargar)"}</button><button class="btn suave" data-act="descargar">Descargar data.json</button>`; }
-  else { b.hidden = true; b.innerHTML = ""; }
+  if (pendiente) {
+    b.hidden = false;
+    b.innerHTML = `Hay una versión publicada más nueva. <button class="btn" data-act="recuperar">Recuperar mis cambios</button><button class="btn suave" data-act="descartar-pendiente">Descartarlos</button>`;
+    return;
+  }
+  if (tokenHay()) {
+    if (pubEstado === "saving") { b.hidden = false; b.innerHTML = `Guardando…`; return; }
+    if (pubEstado === "ok") { b.hidden = false; b.innerHTML = `Guardado ✓`; return; }
+    if (pubEstado === "err") { b.hidden = false; b.innerHTML = `Error al guardar: ${esc(pubMsg)} <button class="btn" data-act="publicar">Reintentar</button>`; return; }
+    if (pubEstado === "dirty" || sucio()) { b.hidden = false; b.innerHTML = `Cambios pendientes…`; return; }
+    b.hidden = true; b.innerHTML = ""; return;
+  }
+  if (sucio()) {
+    b.hidden = false;
+    b.innerHTML = `Cambios solo en este teléfono. <button class="btn" data-act="abrir-ajustes">Conecta GitHub para publicar</button> <button class="btn suave" data-act="descargar">Descargar</button>`;
+  } else { b.hidden = true; b.innerHTML = ""; }
 }
 
 /* ===== GitHub ===== */
-function repoCfg() { const g = { owner: "robchvz97", repo: "vto-frutos-chavez", rama: "main", ruta: "data.json", ...(D?.github || {}) }; let o = {}; try { o = JSON.parse(localStorage.getItem(LS.repo)) || {}; } catch {} return { owner: o.owner || g.owner, repo: o.repo || g.repo, rama: o.rama || g.rama || "main", ruta: g.ruta || "data.json" }; }
-async function gh(metodo, cuerpo) {
-  const c = repoCfg(), t = localStorage.getItem(LS.token);
+function repoCfg() {
+  const g = { owner: "robchvz97", repo: "vto-frutos-chavez", rama: "main", ruta: "data.json", ...(D?.github || {}) };
+  let o = {}; try { o = JSON.parse(localStorage.getItem(LS.repo)) || {}; } catch {}
+  return { owner: o.owner || g.owner || "robchvz97", repo: o.repo || g.repo || "vto-frutos-chavez", rama: o.rama || g.rama || "main", ruta: g.ruta || "data.json" };
+}
+async function gh(metodo, cuerpo, { token } = {}) {
+  const c = repoCfg(), t = token !== undefined ? token : localStorage.getItem(LS.token);
   const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.ruta}` + (metodo === "GET" ? `?ref=${encodeURIComponent(c.rama)}&t=${Date.now()}` : "");
-  const r = await fetch(url, { method: metodo, headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${t}`, "X-GitHub-Api-Version": "2022-11-28" }, body: cuerpo ? JSON.stringify(cuerpo) : undefined, cache: "no-store" });
-  if (!r.ok) { let m = ""; try { m = (await r.json()).message; } catch {} throw new Error(`GitHub ${r.status}${m ? ": " + m : ""}`); }
+  const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+  if (t) headers.Authorization = `Bearer ${t}`;
+  const r = await fetch(url, { method: metodo, headers, body: cuerpo ? JSON.stringify(cuerpo) : undefined, cache: "no-store" });
+  if (!r.ok) { let m = ""; try { m = (await r.json()).message; } catch {} const err = new Error(`GitHub ${r.status}${m ? ": " + m : ""}`); err.status = r.status; throw err; }
   return r.json();
 }
 function texto(d) { return JSON.stringify(d, null, 2) + "\n"; }
@@ -364,20 +498,76 @@ function descargar() {
   const d = clon(D); d.actualizado = hoyISO();
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([texto(d)], { type: "application/json" })); a.download = "data.json"; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  aviso("data.json descargado. Súbelo al repositorio para publicarlo.", 4000);
+  aviso("data.json descargado.", 3000);
+}
+function normalizar(remoto) {
+  for (const k of ["metas", "rocas", "todos", "temas", "scorecard", "juntas", "personas", "responsabilidades"]) remoto[k] = remoto[k] || [];
+  remoto.vto = remoto.vto || {};
+  remoto.vto.valores = remoto.vto.valores || [];
+  remoto.vto.enfoque = remoto.vto.enfoque || { proposito: "", nicho: "" };
+  remoto.vto.meta10 = remoto.vto.meta10 || { fecha: null, texto: "" };
+  remoto.vto.marketing = remoto.vto.marketing || { mercado: "", unicos: [], proceso: "", garantia: "" };
+  remoto.vto.imagen3 = remoto.vto.imagen3 || { fecha: null, ingresos: null, utilidad: null, medibles: [], comoSeVe: [] };
+  remoto.vto.plan1 = remoto.vto.plan1 || { fecha: null, ingresos: null, utilidad: null, medibles: [] };
+  if (!remoto.responsabilidades.length) {
+    remoto.responsabilidades = ["Visionario", "Integrador", "Ventas", "Operaciones", "Finanzas"].map((a, i) => ({ id: "a" + i, asiento: a, persona: null, roles: [] }));
+  } else {
+    remoto.responsabilidades.forEach((a, i) => { if (!a.id) a.id = "a" + i; });
+  }
+  return remoto;
+}
+async function leerRemoto() {
+  // Prefer GitHub API (fresh). With token always; without token try unauthenticated once, then Pages.
+  if (tokenHay()) {
+    const r = await gh("GET");
+    shaRemoto = r.sha;
+    return normalizar(JSON.parse(b64aTexto(r.content)));
+  }
+  try {
+    const r = await gh("GET", null, { token: null });
+    shaRemoto = r.sha;
+    return normalizar(JSON.parse(b64aTexto(r.content)));
+  } catch (e) {
+    const r = await fetch("./data.json?v=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error("data.json HTTP " + r.status);
+    shaRemoto = null;
+    return normalizar(await r.json());
+  }
+}
+let publicando = false;
+async function publicarAuto() {
+  if (!tokenHay() || publicando) return;
+  if (!sucio() && pubEstado !== "dirty" && pubEstado !== "err") return;
+  publicando = true; setPubEstado("saving");
+  try {
+    D.actualizado = hoyISO();
+    let sha = shaRemoto;
+    if (!sha) { const actual = await gh("GET"); sha = actual.sha; shaRemoto = sha; }
+    try {
+      const put = await gh("PUT", { message: `Actualización desde el tablero (${hoyISO()})`, content: textoAb64(texto(D)), sha, branch: repoCfg().rama });
+      shaRemoto = put.content?.sha || put.sha || shaRemoto;
+    } catch (e) {
+      if (e.status === 409 || /sha|conflict/i.test(e.message)) {
+        const actual = await gh("GET");
+        shaRemoto = actual.sha;
+        // last-write-wins with fresh sha (our edits are intentional)
+        const put = await gh("PUT", { message: `Actualización desde el tablero (${hoyISO()}, reintento)`, content: textoAb64(texto(D)), sha: actual.sha, branch: repoCfg().rama });
+        shaRemoto = put.content?.sha || put.sha || shaRemoto;
+      } else throw e;
+    }
+    pub = clon(D); base = hash(canon(pub));
+    localStorage.setItem(LS.local, JSON.stringify({ base, data: D, sucio: false }));
+    setPubEstado("ok");
+    $("#actualizado").textContent = "Actualizado " + fLarga(D.actualizado);
+    setTimeout(() => { if (pubEstado === "ok") setPubEstado("idle"); }, 2500);
+  } catch (e) {
+    setPubEstado("err", e.message);
+  } finally { publicando = false; }
 }
 async function publicar() {
-  if (!localStorage.getItem(LS.token)) { descargar(); return; }
-  try {
-    aviso("Publicando…", 10000);
-    const actual = await gh("GET"), remoto = JSON.parse(b64aTexto(actual.content));
-    if (hash(canon(remoto)) !== base && !confirm("Alguien publicó cambios después de que empezaste a editar. Si publicas, se reemplazan con tu versión. ¿Continuar?")) { aviso("No se publicó."); return; }
-    D.actualizado = hoyISO();
-    
-    await gh("PUT", { message: `Actualización desde el tablero (${hoyISO()})`, content: textoAb64(texto(D)), sha: actual.sha, branch: repoCfg().rama });
-    pub = clon(D); base = hash(canon(pub)); guardar(); render();
-    aviso("Publicado ✓ Tu socio lo verá en 1–2 minutos.", 4000);
-  } catch (e) { aviso("No se pudo publicar: " + e.message, 6000); }
+  if (!tokenHay()) { descargar(); return; }
+  clearTimeout(pubTimer);
+  await publicarAuto();
 }
 
 /* ===== eventos ===== */
@@ -404,30 +594,52 @@ document.addEventListener("click", (e) => {
     case "l10-reset": if (confirm("¿Reiniciar los relojes de la junta?")) { L = { seg: 0, corriendo: false, inicioSeg: null, acum: Array(7).fill(0), inicioJunta: null }; guardarL(); render(); } break;
     case "borrar-roca": if (confirm("¿Borrar esta Roca? Sus To-Dos se quedan sin ligar.")) cambiar(() => { D.rocas = D.rocas.filter((x) => x.id !== id); D.todos.forEach((t) => { if (t.rocaId === id) t.rocaId = null; }); D.temas.forEach((t) => { if (t.rocaId === id) t.rocaId = null; }); }); break;
     case "borrar-meta": if (confirm("¿Borrar esta meta anual? Sus Rocas quedan sin meta.")) cambiar(() => { D.metas = D.metas.filter((x) => x.id !== id); D.rocas.forEach((r) => { if (r.metaId === id) r.metaId = null; }); }); break;
+    case "borrar-medible": if (confirm("¿Borrar este medible?")) cambiar(() => { D.scorecard = D.scorecard.filter((x) => x.id !== id); D.temas.forEach((t) => { if (t.medibleId === id) t.medibleId = null; }); }); break;
+    case "add-valor": cambiar(() => { D.vto.valores = D.vto.valores || []; D.vto.valores.push({ nombre: "", descripcion: "" }); }); break;
+    case "borrar-valor": cambiar(() => { D.vto.valores.splice(+el.dataset.i, 1); }); break;
+    case "add-lista": cambiar(() => { const parts = el.dataset.ruta.split("."); let o = D.vto; for (let i = 0; i < parts.length - 1; i++) { o[parts[i]] = o[parts[i]] || {}; o = o[parts[i]]; } const k = parts[parts.length - 1]; o[k] = o[k] || []; o[k].push(""); }); break;
+    case "borrar-lista": cambiar(() => { const parts = el.dataset.ruta.split("."); let o = D.vto; for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]]; o[parts[parts.length - 1]].splice(+el.dataset.i, 1); }); break;
+    case "abrir-ajustes": $("#ajustes").showModal(); break;
     case "publicar": publicar(); break;
     case "descargar": descargar(); break;
-    case "recuperar": D = pendiente.data; pendiente = null; guardar(); render(); aviso("Cambios recuperados. Revísalos y publica."); break;
+    case "recuperar": D = pendiente.data; pendiente = null; guardar(); render(); aviso("Cambios recuperados."); break;
     case "descartar-pendiente": pendiente = null; guardar(); render(); break;
   }
 });
 document.addEventListener("change", (e) => {
   const el = e.target;
+  if (el.dataset.edit) {
+    if (el.tagName === "SELECT" || el.type === "date" || el.type === "checkbox" || el.type === "number") aplicarEdit(el);
+    return;
+  }
   if (el.dataset.act === "prio-tema") { const v = el.value ? +el.value : null; cambiar(() => { if (v) D.temas.forEach((t) => { if (t.prioridad === v && t.estado !== "resuelto") t.prioridad = null; }); tema(el.dataset.id).prioridad = v; }); }
-  if (el.dataset.act === "liga-todo" && el.value !== "__") { const [k, idl] = el.value.split(":"); cambiar(() => { const t = D.todos.find((x) => x.id === el.dataset.id); t.rocaId = k === "r" ? idl : null; t.temaId = k === "t" ? idl : null; }, "Liga actualizada"); }
-  if (el.dataset.act === "meta-roca" && el.value !== "__") cambiar(() => { roca(el.dataset.id).metaId = el.value || null; }, "Meta actualizada");
+  if (el.dataset.act === "liga-todo" && el.value !== "__") { const [k, idl] = el.value.split(":"); cambiar(() => { const t = D.todos.find((x) => x.id === el.dataset.id); t.rocaId = k === "r" ? idl : null; t.temaId = k === "t" ? idl : null; }); }
+  if (el.dataset.act === "meta-roca" && el.value !== "__") cambiar(() => { roca(el.dataset.id).metaId = el.value || null; });
   if (el.dataset.act === "valor") { const m = D.scorecard.find((x) => x.id === el.dataset.id); cambiar(() => { const v = el.value.trim().replace(/[$,%\s]/g, ""); if (v === "") delete m.valores[el.dataset.sem]; else m.valores[el.dataset.sem] = Number(v); }); }
 });
+document.addEventListener("focusout", (e) => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.edit) return;
+  if (el.tagName === "SELECT" || el.type === "date" || el.type === "checkbox") return;
+  aplicarEdit(el);
+});
+document.addEventListener("keydown", (e) => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.edit) return;
+  if (e.key === "Enter" && el.tagName !== "TEXTAREA") { e.preventDefault(); el.blur(); }
+});
+
 document.addEventListener("submit", (e) => {
   const f = e.target.closest("form[data-form]"); if (!f) return; e.preventDefault();
   const fd = Object.fromEntries(new FormData(f)), tipo = f.dataset.form, txt = (fd.texto || "").trim();
-  if (tipo === "todo" && txt) { const [k, idl] = (fd.liga || "").split(":"); cambiar(() => D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno, fecha: fd.fecha || sumarDias(hoyISO(), 7), hecho: false, hechoEl: null, rocaId: k === "r" ? idl : null, temaId: k === "t" ? idl : null, creado: hoyISO() }), "To-Do agregado"); }
-  if (tipo === "tema" && txt) cambiar(() => D.temas.push({ id: nuevoId("t"), texto: txt, dueno: fd.dueno, prioridad: null, estado: "identificado", solucion: "", creado: hoyISO() }), "Tema agregado");
-  if (tipo === "roca" && txt) cambiar(() => D.rocas.push({ id: nuevoId("r"), texto: txt, dueno: fd.dueno, metaId: fd.metaId || null, estado: "en_camino", fecha: fd.fecha || D.trimestre?.fin || "" }), "Roca agregada");
-  if (tipo === "meta" && txt) cambiar(() => D.metas.push({ id: nuevoId("m"), texto: txt, dueno: fd.dueno }), "Meta agregada");
-  if (tipo === "medible" && (fd.nombre || "").trim()) { const mv = Number(String(fd.meta).replace(/[$,%\s]/g, "")); if (isNaN(mv)) { aviso("La meta debe ser un número"); return; } cambiar(() => D.scorecard.push({ id: nuevoId("s"), nombre: fd.nombre.trim(), dueno: fd.dueno, operador: fd.operador, meta: mv, unidad: fd.unidad, valores: {} }), "Medible agregado"); }
+  if (tipo === "todo" && txt) { const [k, idl] = (fd.liga || "").split(":"); cambiar(() => D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno || null, fecha: fd.fecha || sumarDias(hoyISO(), 7), hecho: false, hechoEl: null, rocaId: k === "r" ? idl : null, temaId: k === "t" ? idl : null, creado: hoyISO() }), "To-Do agregado"); }
+  if (tipo === "tema" && txt) cambiar(() => D.temas.push({ id: nuevoId("t"), texto: txt, dueno: fd.dueno || null, prioridad: null, estado: "identificado", solucion: "", creado: hoyISO() }), "Tema agregado");
+  if (tipo === "roca" && txt) cambiar(() => D.rocas.push({ id: nuevoId("r"), texto: txt, dueno: fd.dueno || null, metaId: fd.metaId || null, estado: "en_camino", fecha: fd.fecha || D.trimestre?.fin || "" }), "Roca agregada");
+  if (tipo === "meta" && txt) cambiar(() => D.metas.push({ id: nuevoId("m"), texto: txt, dueno: fd.dueno || null }), "Meta agregada");
+  if (tipo === "medible" && (fd.nombre || "").trim()) { const mv = Number(String(fd.meta).replace(/[$,%\s]/g, "")); if (isNaN(mv)) { aviso("La meta debe ser un número"); return; } cambiar(() => D.scorecard.push({ id: nuevoId("s"), nombre: fd.nombre.trim(), dueno: fd.dueno || null, operador: fd.operador, meta: mv, unidad: fd.unidad, valores: {} }), "Medible agregado"); }
   if (tipo === "titular" && txt) cambiar(() => juntaOCrear().titulares.push(txt));
   if (tipo === "mensaje" && txt) cambiar(() => juntaOCrear().mensajes.push(txt));
-  if (tipo === "solucion") { const t = tema(f.dataset.id); cambiar(() => { t.solucion = (fd.solucion || "").trim(); if (txt) D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno, fecha: fd.fecha, hecho: false, hechoEl: null, rocaId: null, temaId: t.id, creado: hoyISO() }); if (fd.resolver) t.estado = "resuelto"; else if (t.estado === "identificado") t.estado = "discutiendo"; }, txt ? "To-Do creado desde el tema" : "Guardado"); }
+  if (tipo === "solucion") { const t = tema(f.dataset.id); cambiar(() => { t.solucion = (fd.solucion || "").trim(); if (txt) D.todos.push({ id: nuevoId("d"), texto: txt, dueno: fd.dueno || null, fecha: fd.fecha, hecho: false, hechoEl: null, rocaId: null, temaId: t.id, creado: hoyISO() }); if (fd.resolver) t.estado = "resuelto"; else if (t.estado === "identificado") t.estado = "discutiendo"; }, txt ? "To-Do creado desde el tema" : "Guardado"); }
 });
 function ruta() {
   const m = location.hash.match(/#\/(\w+)(?:\/([\w-]+))?/) || [];
@@ -442,27 +654,35 @@ addEventListener("hashchange", ruta);
 /* ----- ajustes ----- */
 function abrirAjustes() {
   const c = repoCfg();
-  $("#aj-token").value = localStorage.getItem(LS.token) || ""; $("#aj-owner").value = c.owner || ""; $("#aj-repo").value = c.repo || ""; $("#aj-rama").value = c.rama || "main";
-  $("#aj-repo-nombre").textContent = c.repo || "";
-  $("#aj-personas").innerHTML = personas().map((p) => `<label class="campo">Nombre (${esc(p.id)})<input data-persona="${p.id}" value="${esc(p.nombre)}"></label>`).join("");
-  $("#aj-estado").textContent = localStorage.getItem(LS.token) ? "Token guardado en este navegador." : "Sin token: Publicar descargará el archivo.";
+  $("#aj-token").value = localStorage.getItem(LS.token) || "";
+  $("#aj-repo-nombre").textContent = `${c.owner}/${c.repo}`;
+  $("#aj-personas").innerHTML = personas().map((p) => `<label class="campo">${esc(p.id === "socio" ? "Nombre del socio" : "Tu nombre")}<input data-persona="${p.id}" value="${esc(p.nombre)}"></label>`).join("");
+  $("#aj-estado").textContent = tokenHay() ? "✓ Token guardado. Los cambios se publican solos." : "Sin token: los cambios quedan solo en este teléfono.";
   $("#ajustes").showModal();
 }
 function guardarAjustes() {
-  const t = $("#aj-token").value.trim(); if (t) localStorage.setItem(LS.token, t); else localStorage.removeItem(LS.token);
-  localStorage.setItem(LS.repo, JSON.stringify({ owner: $("#aj-owner").value.trim(), repo: $("#aj-repo").value.trim(), rama: $("#aj-rama").value.trim() || "main" }));
-  let cambio = false; $$("[data-persona]").forEach((i) => { const p = personas().find((x) => x.id === i.dataset.persona); const v = i.value.trim(); if (p && v && v !== p.nombre) { p.nombre = v; cambio = true; } });
+  const t = $("#aj-token").value.trim();
+  if (t) localStorage.setItem(LS.token, t); else localStorage.removeItem(LS.token);
+  let cambio = false;
+  $$("[data-persona]").forEach((i) => { const p = personas().find((x) => x.id === i.dataset.persona); const v = i.value.trim(); if (p && v && v !== p.nombre) { p.nombre = v; cambio = true; } });
   if (cambio) guardar();
-  render(); $("#aj-estado").textContent = "Guardado."; 
+  render();
+  $("#aj-estado").textContent = tokenHay() ? "✓ Guardado. Los cambios se publican solos." : "Guardado (sin token).";
+  pintarBarra();
 }
 function init() {
   $("#btn-tema").onclick = () => { localStorage.setItem(LS.tema, (localStorage.getItem(LS.tema) || "claro") === "claro" ? "oscuro" : "claro"); render(); };
   $("#btn-ajustes").onclick = abrirAjustes;
   $("#aj-guardar").onclick = guardarAjustes;
-  $("#aj-borrar").onclick = () => { localStorage.removeItem(LS.token); $("#aj-token").value = ""; $("#aj-estado").textContent = "Token borrado de este navegador."; pintarBarra(); };
-  $("#aj-probar").onclick = async () => { guardarAjustes(); $("#aj-estado").textContent = "Probando…"; try { const r = await gh("GET"); $("#aj-estado").textContent = `Conexión correcta ✓ (${repoCfg().owner}/${repoCfg().repo}, ${r.size} bytes)`; } catch (e) { $("#aj-estado").textContent = "Error: " + e.message; } };
+  $("#aj-borrar").onclick = () => { localStorage.removeItem(LS.token); $("#aj-token").value = ""; $("#aj-estado").textContent = "Token borrado."; pintarBarra(); };
+  $("#aj-probar").onclick = async () => {
+    guardarAjustes();
+    $("#aj-estado").textContent = "Probando…";
+    try { const r = await gh("GET"); $("#aj-estado").textContent = `Conexión correcta ✓ (${repoCfg().owner}/${repoCfg().repo})`; }
+    catch (e) { $("#aj-estado").textContent = "Error: " + e.message; }
+  };
   $("#aj-descargar").onclick = descargar;
-  $("#aj-descartar").onclick = () => { if (!confirm("¿Descartar todos los cambios sin publicar de este navegador?")) return; D = clon(pub); pendiente = null; localStorage.removeItem(LS.local); render(); aviso("Cambios descartados."); };
+  $("#aj-descartar").onclick = () => { if (!confirm("¿Descartar todos los cambios sin publicar de este teléfono?")) return; D = clon(pub); pendiente = null; localStorage.removeItem(LS.local); setPubEstado("idle"); render(); aviso("Cambios descartados."); };
   setInterval(tickL10, 500);
 }
 
@@ -473,16 +693,17 @@ function purgarViejo() {
 }
 async function cargar() {
   purgarViejo();
-
-  let remoto = null;
-  if (localStorage.getItem(LS.token)) { try { const r = await gh("GET"); remoto = JSON.parse(b64aTexto(r.content)); } catch (e) { console.warn("API GitHub no disponible, uso data.json", e); } }
-  if (!remoto) { const r = await fetch("./data.json?v=" + Date.now(), { cache: "no-store" }); if (!r.ok) throw new Error("data.json HTTP " + r.status); remoto = await r.json(); }
-  for (const k of ["metas", "rocas", "todos", "temas", "scorecard", "juntas", "personas", "responsabilidades"]) remoto[k] = remoto[k] || [];
-  remoto.vto = remoto.vto || {};
+  let remoto;
+  try { remoto = await leerRemoto(); }
+  catch (e) {
+    const r = await fetch("./data.json?v=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw e;
+    remoto = normalizar(await r.json());
+  }
   pub = remoto; base = hash(canon(pub)); D = clon(pub);
   let local = null; try { local = JSON.parse(localStorage.getItem(LS.local)); } catch {}
   if (local?.data) {
-    if (local.base === base) D = local.data;
+    if (local.base === base) { D = local.data; if (local.sucio && tokenHay()) { setPubEstado("dirty"); clearTimeout(pubTimer); pubTimer = setTimeout(() => publicarAuto(), 800); } }
     else if (local.sucio && canon(local.data) !== canon(pub)) pendiente = local;
     else localStorage.removeItem(LS.local);
   }
